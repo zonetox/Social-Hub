@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { redirect } from 'next/navigation'
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-    const { user, loading, hasSession } = useAuth()
+    const { user, loading, hasSession, signOut } = useAuth()
 
     if (loading) {
         return (
