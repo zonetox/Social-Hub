@@ -98,20 +98,22 @@ CREATE INDEX idx_analytics_created_at ON public.analytics(created_at);
 -- =============================================
 -- ROW LEVEL SECURITY (RLS)
 -- =============================================
+-- Add this before the policies to prevent recursion
+CREATE OR REPLACE FUNCTION public.is_admin() RETURNS BOOLEAN AS $$ BEGIN RETURN (
+        SELECT (role = 'admin')
+        FROM public.users
+        WHERE id = auth.uid()
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 -- Users table policies
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view all active users" ON public.users FOR
 SELECT USING (is_active = TRUE);
 CREATE POLICY "Users can update own profile" ON public.users FOR
 UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can do everything" ON public.users FOR ALL USING (
-    EXISTS (
-        SELECT 1
-        FROM public.users
-        WHERE id = auth.uid()
-            AND role = 'admin'
-    )
-);
+CREATE POLICY "Admins can do everything" ON public.users FOR ALL USING (public.is_admin());
 -- Profiles table policies
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR
@@ -166,14 +168,7 @@ SELECT USING (
 CREATE POLICY "Anyone can insert analytics" ON public.analytics FOR
 INSERT WITH CHECK (TRUE);
 CREATE POLICY "Admins can view all analytics" ON public.analytics FOR
-SELECT USING (
-        EXISTS (
-            SELECT 1
-            FROM public.users
-            WHERE id = auth.uid()
-                AND role = 'admin'
-        )
-    );
+SELECT USING (public.is_admin());
 -- =============================================
 -- FUNCTIONS
 -- =============================================
