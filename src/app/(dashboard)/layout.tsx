@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { ReactNode } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { Navbar } from '@/components/dashboard/Navbar'

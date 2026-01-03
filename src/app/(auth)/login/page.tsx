@@ -1,4 +1,6 @@
 
+export const dynamic = 'force-dynamic'
+
 import { LoginForm } from '@/components/auth/LoginForm'
 
 export const metadata = {
