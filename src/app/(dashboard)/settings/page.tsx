@@ -28,16 +28,20 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
-    const { user } = useAuth()
-    const { profile, loading, refreshProfile } = useProfile(user?.id)
+    const { user, loading: authLoading } = useAuth()
+    const { profile, loading: profileLoading, refreshProfile } = useProfile(user?.id)
     const [activeTab, setActiveTab] = useState<'account' | 'profile' | 'privacy' | 'security'>('account')
 
-    if (loading) {
+    if (authLoading || profileLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <LoadingSpinner size="lg" />
             </div>
         )
+    }
+
+    if (!user) {
+        return null // Should be handled by layout, but defensive here
     }
 
     const tabs = [

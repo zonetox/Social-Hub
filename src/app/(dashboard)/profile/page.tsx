@@ -14,16 +14,20 @@ import { Button } from '@/components/ui/Button'
 import { Plus } from 'lucide-react'
 
 export default function ProfilePage() {
-    const { user } = useAuth()
-    const { profile, loading, refreshProfile } = useProfile(user?.id)
+    const { user, loading: authLoading } = useAuth()
+    const { profile, loading: profileLoading, refreshProfile } = useProfile(user?.id)
     const [showAddModal, setShowAddModal] = useState(false)
 
-    if (loading) {
+    if (authLoading || profileLoading) {
         return (
             <div className="flex items-center justify-center py-20">
                 <LoadingSpinner size="lg" />
             </div>
         )
+    }
+
+    if (!user) {
+        return null // Should be handled by layout
     }
 
     if (!profile) {
