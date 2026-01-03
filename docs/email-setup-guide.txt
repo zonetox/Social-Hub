@@ -1,0 +1,692 @@
+# 📧 Email Notifications & QR Code Setup Guide
+
+## 📋 Overview
+
+This guide covers:
+1. QR Code Generation Setup
+2. Email Notifications with Resend
+3. Supabase Edge Functions
+4. Database Triggers
+5. Testing & Deployment
+
+---
+
+## 🎯 Part 1: QR Code Setup
+
+### 1.1 Install Dependencies
+
+```bash
+npm install qrcode
+npm install --save-dev @types/qrcode
+```
+
+### 1.2 Copy QR Code Files
+
+Create these files from the previous artifact:
+- `src/lib/utils/qr-code.ts`
+- `src/components/profile/QRCodeModal.tsx`
+
+### 1.3 Update ProfileHeader Component
+
+In `src/components/profile/ProfileHeader.tsx`:
+
+```typescript
+// Add imports
+import { QRCodeModal } from './QRCodeModal'
+import { QrCode } from 'lucide-react'
+import { useState } from 'react'
+
+// Add state in component
+const [showQRModal, setShowQRModal] = useState(false)
+
+// Add button in the actions section (after Share button)
+<Button
+  size="sm"
+  variant="outline"
+  onClick={() => setShowQRModal(true)}
+>
+  <QrCode className="w-4 h-4" />
+  QR Code
+</Button>
+
+// Add modal before closing the component
+<QRCodeModal
+  isOpen={showQRModal}
+  onClose={() => setShowQRModal(false)}
+  profileUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/${profile.slug}`}
+  profileName={profile.display_name}
+/>
+```
+
+### 1.4 Update PublicProfileView Component
+
+Add QR code button to public profile page as well:
+
+```typescript
+// In src/components/profile/PublicProfileView.tsx
+// Add same imports and button logic
+```
+
+### 1.5 Test QR Code
+
+```bash
+npm run dev
+```
+
+1. Go to your profile
+2. Click "QR Code" button
+3. Verify QR code generates
+4. Test download functionality
+5. Scan with phone to verify
+
+---
+
+## 📧 Part 2: Email Setup with Resend
+
+### 2.1 Create Resend Account
+
+1. Go to [resend.com](https://resend.com)
+2. Sign up (free tier: 100 emails/day)
+3. Verify your email
+4. Go to **API Keys**
+5. Create new API key
+6. Copy the key (starts with `re_...`)
+
+### 2.2 Add Domain (Optional but Recommended)
+
+**For production emails:**
+
+1. Go to **Domains** in Resend
+2. Click **Add Domain**
+3. Enter your domain: `yourdomain.com`
+4. Add DNS records:
+
+```
+Type: TXT
+Name: @
+Value: [provided by Resend]
+
+Type: MX
+Name: @
+Value: [provided by Resend]
+Priority: 10
+```
+
+5. Wait for verification (~5-10 minutes)
+6. Send from: `noreply@yourdomain.com`
+
+**For testing:**
+- Use `onboarding@resend.dev` (no domain needed)
+- Limited to your own email
+
+### 2.3 Install Resend SDK
+
+```bash
+npm install resend
+```
+
+### 2.4 Add Environment Variable
+
+In `.env.local`:
+
+```env
+RESEND_API_KEY=re_your_api_key_here
+```
+
+### 2.5 Create Email Service
+
+Create `src/lib/email/resend.ts`:
+
+```typescript
+import { Resend } from 'resend'
+
+const resend = new Resend(process.env.RESEND_API_KEY)
+
+export async function sendEmail(
+  to: string | string[],
+  subject: string,
+  html: string
+) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Social Hub <noreply@yourdomain.com>', // or onboarding@resend.dev for testing
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      html,
+    })
+
+    if (error) {
+      console.error('Resend error:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Email error:', error)
+    return { success: false, error }
+  }
+}
+
+// Helper to send welcome email
+export async function sendWelcomeEmail(
+  email: string,
+  userName: string,
+  profileUrl: string
+) {
+  const { emailTemplates } = await import('./templates')
+  const template = emailTemplates.welcome(userName, profileUrl)
+  
+  return sendEmail(email, template.subject, template.html)
+}
+
+// Helper to send follower notification
+export async function sendFollowerNotification(
+  email: string,
+  followerName: string,
+  followerUsername: string,
+  followerUrl: string,
+  profileUrl: string
+) {
+  const { emailTemplates } = await import('./templates')
+  const template = emailTemplates.newFollower(
+    followerName,
+    followerUsername,
+    followerUrl,
+    profileUrl
+  )
+  
+  return sendEmail(email, template.subject, template.html)
+}
+```
+
+---
+
+## 🔧 Part 3: Webhook Setup
+
+### 3.1 Create Welcome Email Webhook
+
+Create `src/app/api/webhooks/welcome/route.ts`:
+
+```typescript
+import { createServerClient } from '@/lib/supabase/server'
+import { sendWelcomeEmail } from '@/lib/email/resend'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  try {
+    // Verify webhook signature (add security later)
+    const body = await request.json()
+    const { userId } = body
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing userId' }, { status: 400 })
+    }
+
+    // Get user data
+    const supabase = createServerClient()
+    const { data: user } = await supabase
+      .from('users')
+      .select('email, full_name')
+      .eq('id', userId)
+      .single()
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('slug')
+      .eq('user_id', userId)
+      .single()
+
+    if (!user || !profile) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Send welcome email
+    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${profile.slug}`
+    const result = await sendWelcomeEmail(user.email, user.full_name, profileUrl)
+
+    if (!result.success) {
+      throw new Error('Failed to send email')
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Welcome email error:', error)
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}
+```
+
+### 3.2 Create Follower Notification Webhook
+
+Create `src/app/api/webhooks/follower/route.ts`:
+
+```typescript
+import { createServerClient } from '@/lib/supabase/server'
+import { sendFollowerNotification } from '@/lib/email/resend'
+import { NextResponse } from 'next/server'
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const { followerId, followingId } = body
+
+    if (!followerId || !followingId) {
+      return NextResponse.json({ error: 'Missing IDs' }, { status: 400 })
+    }
+
+    const supabase = createServerClient()
+
+    // Get follower data
+    const { data: follower } = await supabase
+      .from('users')
+      .select('full_name, username')
+      .eq('id', followerId)
+      .single()
+
+    const { data: followerProfile } = await supabase
+      .from('profiles')
+      .select('slug')
+      .eq('user_id', followerId)
+      .single()
+
+    // Get following user data
+    const { data: followingUser } = await supabase
+      .from('users')
+      .select('email, full_name')
+      .eq('id', followingId)
+      .single()
+
+    const { data: followingProfile } = await supabase
+      .from('profiles')
+      .select('slug')
+      .eq('user_id', followingId)
+      .single()
+
+    if (!follower || !followerProfile || !followingUser || !followingProfile) {
+      return NextResponse.json({ error: 'Data not found' }, { status: 404 })
+    }
+
+    // Send notification email
+    const followerUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${followerProfile.slug}`
+    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${followingProfile.slug}`
+
+    const result = await sendFollowerNotification(
+      followingUser.email,
+      follower.full_name,
+      follower.username,
+      followerUrl,
+      profileUrl
+    )
+
+    if (!result.success) {
+      throw new Error('Failed to send email')
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Follower notification error:', error)
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}
+```
+
+### 3.3 Trigger Webhooks from Client
+
+Update the follow handler in `PublicProfileView.tsx`:
+
+```typescript
+const handleFollow = async () => {
+  if (!user || isOwnProfile) return
+
+  setIsLoading(true)
+  try {
+    if (isFollowing) {
+      await supabase
+        .from('follows')
+        .delete()
+        .eq('follower_id', user.id)
+        .eq('following_id', profile.user_id)
+      
+      setIsFollowing(false)
+    } else {
+      await supabase
+        .from('follows')
+        .insert({
+          follower_id: user.id,
+          following_id: profile.user_id,
+        })
+      
+      // Send follower notification
+      await fetch('/api/webhooks/follower', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          followerId: user.id,
+          followingId: profile.user_id,
+        }),
+      })
+      
+      setIsFollowing(true)
+    }
+  } catch (error) {
+    console.error('Follow error:', error)
+  } finally {
+    setIsLoading(false)
+  }
+}
+```
+
+Update the register handler in `RegisterForm.tsx`:
+
+```typescript
+// After successful registration
+const { data: authData, error: authError } = await supabase.auth.signUp({
+  email: formData.email,
+  password: formData.password,
+})
+
+if (authError) throw authError
+if (!authData.user) throw new Error('Failed to create user')
+
+// Create user in users table
+const { error: userError } = await supabase
+  .from('users')
+  .insert({
+    id: authData.user.id,
+    email: formData.email,
+    username: formData.username,
+    full_name: formData.full_name,
+  })
+
+if (userError) throw userError
+
+// Send welcome email
+await fetch('/api/webhooks/welcome', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    userId: authData.user.id,
+  }),
+})
+
+router.push('/hub')
+```
+
+---
+
+## 🧪 Part 4: Testing Emails
+
+### 4.1 Test Welcome Email
+
+```bash
+# Start dev server
+npm run dev
+
+# Register a new account with your real email
+# Check inbox (and spam folder)
+```
+
+### 4.2 Test Follower Notification
+
+```bash
+# Login with one account
+# Follow another user
+# Check the followed user's email
+```
+
+### 4.3 Test Email Templates
+
+Create `src/app/api/test-email/route.ts`:
+
+```typescript
+import { sendWelcomeEmail, sendFollowerNotification } from '@/lib/email/resend'
+import { NextResponse } from 'next/server'
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const type = searchParams.get('type')
+  const email = searchParams.get('email')
+
+  if (!email) {
+    return NextResponse.json({ error: 'Email required' }, { status: 400 })
+  }
+
+  try {
+    if (type === 'welcome') {
+      await sendWelcomeEmail(
+        email,
+        'Test User',
+        'https://yourdomain.com/testuser'
+      )
+    } else if (type === 'follower') {
+      await sendFollowerNotification(
+        email,
+        'John Doe',
+        'johndoe',
+        'https://yourdomain.com/johndoe',
+        'https://yourdomain.com/yourprofile'
+      )
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+}
+```
+
+Test:
+```
+http://localhost:3000/api/test-email?type=welcome&email=your@email.com
+http://localhost:3000/api/test-email?type=follower&email=your@email.com
+```
+
+---
+
+## 🚀 Part 5: Production Deployment
+
+### 5.1 Update Environment Variables
+
+In Vercel:
+
+```env
+RESEND_API_KEY=re_your_production_key
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+```
+
+### 5.2 Update Email Sender
+
+In `src/lib/email/resend.ts`:
+
+```typescript
+// Change from onboarding@resend.dev to your domain
+from: 'Social Hub <noreply@yourdomain.com>'
+```
+
+### 5.3 Configure Rate Limiting (Optional)
+
+```typescript
+// src/app/api/webhooks/follower/route.ts
+import { headers } from 'next/headers'
+
+export async function POST(request: Request) {
+  const headersList = headers()
+  const ip = headersList.get('x-forwarded-for')
+  
+  // Implement rate limiting
+  // Max 10 follow actions per minute per IP
+  // Use Redis or similar
+  
+  // ... rest of code
+}
+```
+
+### 5.4 Add Webhook Security
+
+```typescript
+// Generate webhook secret
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
+
+export async function POST(request: Request) {
+  const signature = request.headers.get('x-webhook-signature')
+  
+  // Verify signature
+  if (signature !== WEBHOOK_SECRET) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  
+  // ... rest of code
+}
+```
+
+---
+
+## 📊 Part 6: Analytics & Monitoring
+
+### 6.1 Track Email Opens (Optional)
+
+Add tracking pixel to email templates:
+
+```html
+<img src="https://yourdomain.com/api/track-open?email_id={{email_id}}" 
+     width="1" height="1" alt="" />
+```
+
+### 6.2 Monitor Email Delivery
+
+In Resend dashboard:
+- View sent emails
+- Check delivery status
+- Monitor bounce rates
+- Review spam complaints
+
+### 6.3 Log Email Events
+
+```typescript
+// src/lib/email/resend.ts
+export async function sendEmail(...) {
+  const result = await resend.emails.send(...)
+  
+  // Log to database
+  await supabase.from('email_logs').insert({
+    to: to,
+    subject: subject,
+    status: result.success ? 'sent' : 'failed',
+    sent_at: new Date().toISOString(),
+    error: result.error || null
+  })
+  
+  return result
+}
+```
+
+---
+
+## 🔧 Part 7: Additional Features
+
+### 7.1 Email Preferences
+
+Add preferences table:
+
+```sql
+CREATE TABLE email_preferences (
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  welcome_emails BOOLEAN DEFAULT TRUE,
+  follower_notifications BOOLEAN DEFAULT TRUE,
+  weekly_digest BOOLEAN DEFAULT TRUE,
+  marketing_emails BOOLEAN DEFAULT FALSE,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 7.2 Unsubscribe Link
+
+```html
+<p style="margin: 20px 0 0 0; color: #9ca3af; font-size: 12px;">
+  Don't want these emails? 
+  <a href="{{unsubscribe_url}}" style="color: #9ca3af;">
+    Unsubscribe
+  </a>
+</p>
+```
+
+Create unsubscribe endpoint:
+
+```typescript
+// src/app/api/unsubscribe/route.ts
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const userId = searchParams.get('user')
+  const type = searchParams.get('type')
+  
+  // Update preferences
+  await supabase
+    .from('email_preferences')
+    .update({ [`${type}_emails`]: false })
+    .eq('user_id', userId)
+  
+  return NextResponse.redirect('/unsubscribed')
+}
+```
+
+---
+
+## ✅ Testing Checklist
+
+- [ ] QR code generates correctly
+- [ ] QR code can be downloaded
+- [ ] QR code can be scanned
+- [ ] Welcome email sends on registration
+- [ ] Follower email sends on follow
+- [ ] Emails render correctly on mobile
+- [ ] Unsubscribe link works
+- [ ] Email preferences save
+- [ ] Rate limiting works
+- [ ] Error handling works
+- [ ] Production domain configured
+
+---
+
+## 🐛 Troubleshooting
+
+### Email not sending
+
+1. Check Resend API key
+2. Verify domain is verified (if using custom domain)
+3. Check rate limits (100/day on free tier)
+4. Review error logs in Resend dashboard
+
+### QR code not generating
+
+1. Check qrcode package installed
+2. Verify browser supports canvas API
+3. Check console for errors
+4. Test with simple URL first
+
+### Webhook not triggering
+
+1. Verify API route exists
+2. Check request body format
+3. Review server logs
+3. Test with curl/Postman first
+
+---
+
+**🎉 You're Done!**
+
+Your users will now receive:
+- Welcome email on signup
+- Follower notifications
+- Can generate QR codes for profiles
+
+**Next Steps:**
+- Set up weekly digest emails
+- Add email templates for other events
+- Implement SMS notifications (optional)
+- Add push notifications (optional)
