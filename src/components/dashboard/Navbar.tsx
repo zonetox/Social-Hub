@@ -28,7 +28,7 @@ export function Navbar() {
         { name: 'Hub', href: '/hub', icon: Home },
         { name: 'My Profile', href: '/profile', icon: User },
         { name: 'Settings', href: '/settings', icon: Settings },
-        { name: 'Upgrade', href: '/upgrade', icon: Sparkles },
+        { name: 'Pricing', href: '/pricing', icon: Sparkles },
     ]
 
     if (isAdmin) {
