@@ -40,53 +40,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     useEffect(() => {
-        const initializeAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession()
-
-                if (session?.user) {
-                    setHasSession(true)
-                    const userData = await fetchUser(session.user.id)
-                    setUser(userData)
-                } else {
-                    setHasSession(false)
-                    setUser(null)
-                }
-            } catch (error) {
-                console.error('Initial session check failed:', error)
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        initializeAuth()
+        let mounted = true
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                setLoading(true)
-                if (session?.user) {
-                    setHasSession(true)
-                    const userData = await fetchUser(session.user.id)
-                    setUser(userData)
-                } else {
-                    setHasSession(false)
-                    setUser(null)
+                // Only set loading if it's not already loading and it's a sign-in event
+                // to avoid flickering on every state change if data is already there.
+                if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+                    // We stay in loading(true) which is the default
                 }
-                setLoading(false)
+
+                try {
+                    if (session?.user) {
+                        setHasSession(true)
+                        const userData = await fetchUser(session.user.id)
+                        if (mounted) setUser(userData)
+                    } else {
+                        setHasSession(false)
+                        if (mounted) setUser(null)
+                    }
+                } catch (error) {
+                    console.error('Auth state change error:', error)
+                } finally {
+                    if (mounted) setLoading(false)
+                }
             }
         )
 
+        // As a fallback, ensure loading is set to false after a timeout 
+        // if anything goes wrong with Supabase's initial response
+        const timeout = setTimeout(() => {
+            if (mounted && loading) {
+                console.warn('Auth initialization timed out, forcing loading to false')
+                setLoading(false)
+            }
+        }, 5000)
+
         return () => {
+            mounted = false
             subscription.unsubscribe()
+            clearTimeout(timeout)
         }
     }, [])
 
     const signOut = async () => {
-        setLoading(true)
-        await supabase.auth.signOut()
-        setHasSession(false)
-        setUser(null)
-        setLoading(false)
+        try {
+            setLoading(true)
+            await supabase.auth.signOut()
+            setUser(null)
+            setHasSession(false)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const value = {

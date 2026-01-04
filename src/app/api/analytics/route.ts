@@ -66,7 +66,7 @@ export async function GET(request: Request) {
 
     // Fetch analytics data
     const startDate = new Date()
-    startDate.setDate(startDate.getDate() - days)
+    startDate.setDate(startDate.getDate() - (days * 2)) // Fetch 2 periods for comparison
 
     let query = supabase
         .from('analytics')
@@ -84,11 +84,19 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Process data into daily buckets
-    const dailyStats: Record<string, { views: number; clicks: number; date: string }> = {}
+    // Process data into daily buckets and summary
+    const midPoint = new Date()
+    midPoint.setDate(midPoint.getDate() - days)
+    const midPointIso = midPoint.toISOString()
 
-    // Initialize all days in the range
-    for (let i = 0; i <= days; i++) {
+    const dailyStats: Record<string, { views: number; clicks: number; date: string }> = {}
+    let currentViews = 0
+    let currentClicks = 0
+    let previousViews = 0
+    let previousClicks = 0
+
+    // Initialize only the LAST X days for chartData
+    for (let i = 0; i < days; i++) {
         const d = new Date()
         d.setDate(d.getDate() - i)
         const dateStr = d.toISOString().split('T')[0]
@@ -97,20 +105,32 @@ export async function GET(request: Request) {
 
     data.forEach((event: any) => {
         const dateStr = event.created_at.split('T')[0]
-        if (dailyStats[dateStr]) {
-            if (event.event_type === 'view') dailyStats[dateStr].views++
-            if (event.event_type === 'click') dailyStats[dateStr].clicks++
+        const isCurrentPeriod = event.created_at >= midPointIso
+
+        if (isCurrentPeriod) {
+            if (event.event_type === 'view') currentViews++
+            if (event.event_type === 'click') currentClicks++
+
+            if (dailyStats[dateStr]) {
+                if (event.event_type === 'view') dailyStats[dateStr].views++
+                if (event.event_type === 'click') dailyStats[dateStr].clicks++
+            }
+        } else {
+            if (event.event_type === 'view') previousViews++
+            if (event.event_type === 'click') previousClicks++
         }
     })
 
-    // Convert to sorted array
+    // Convert to sorted array for chart
     const chartData = Object.values(dailyStats).sort((a, b) => a.date.localeCompare(b.date))
 
     return NextResponse.json({
         chartData,
         summary: {
-            totalViews: data.filter((e: any) => e.event_type === 'view').length,
-            totalClicks: data.filter((e: any) => e.event_type === 'click').length,
+            currentPeriod: { views: currentViews, clicks: currentClicks },
+            previousPeriod: { views: previousViews, clicks: previousClicks },
+            totalViews: currentViews, // For backward compatibility
+            totalClicks: currentClicks // For backward compatibility
         }
     })
 }

@@ -29,15 +29,20 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL('/login', req.url))
     }
 
-    // Check admin access
+    // Check admin access (only if on an admin route)
     if (session && adminRoutes.some(route => path.startsWith(route))) {
-        const { data: user } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', session.user.id)
-            .single() as any
+        try {
+            const { data: user } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', session.user.id)
+                .single() as any
 
-        if (user?.role !== 'admin') {
+            if (user?.role !== 'admin') {
+                return NextResponse.redirect(new URL('/hub', req.url))
+            }
+        } catch (error) {
+            // If check fails, default to safe redirect
             return NextResponse.redirect(new URL('/hub', req.url))
         }
     }

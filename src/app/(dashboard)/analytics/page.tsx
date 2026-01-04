@@ -55,20 +55,31 @@ export default function AnalyticsPage() {
                 .select('*')
                 .eq('sender_id', user.id) as any
 
+            // Calculate growth percentages
+            const calculateGrowth = (current: number, previous: number) => {
+                if (previous === 0) return current > 0 ? 100 : 0
+                return Math.round(((current - previous) / previous) * 100)
+            }
+
+            const viewsGrowth = calculateGrowth(historical.summary.currentPeriod.views, historical.summary.previousPeriod.views)
+            const clicksGrowth = calculateGrowth(historical.summary.currentPeriod.clicks, historical.summary.previousPeriod.clicks)
+
             // Calculate stats
-            const totalViews = profile.view_count || 0
-            const totalClicks = historical.summary?.totalClicks || 0
+            const totalViewsCurrent = historical.summary.currentPeriod.views
+            const totalClicksCurrent = historical.summary.currentPeriod.clicks
             const totalSent = sentCards?.length || 0
             const totalViewed = sentCards?.filter((c: any) => c.viewed).length || 0
             const cardSuccessRate = totalSent > 0 ? Math.round((totalViewed / totalSent) * 100) : 0
 
             setStats({
-                profileViews: totalViews,
+                profileViews: totalViewsCurrent,
                 followers: profile.follower_count || 0,
-                clicks: totalClicks,
+                clicks: totalClicksCurrent,
                 sentCards: totalSent,
                 cardSuccessRate,
-                ctr: totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : 0
+                ctr: totalViewsCurrent > 0 ? ((totalClicksCurrent / totalViewsCurrent) * 100).toFixed(1) : 0,
+                viewsGrowth,
+                clicksGrowth
             })
 
             setChartData(historical.chartData || [])
@@ -104,9 +115,9 @@ export default function AnalyticsPage() {
                         <div className="p-3 bg-primary-50 rounded-2xl text-primary-600">
                             <Eye className="w-6 h-6" />
                         </div>
-                        <div className="flex items-center text-green-600 font-bold text-sm">
-                            <TrendingUp className="w-4 h-4 mr-1" />
-                            +12%
+                        <div className={`flex items-center font-bold text-sm ${stats.viewsGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {stats.viewsGrowth >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
+                            {stats.viewsGrowth >= 0 ? '+' : ''}{stats.viewsGrowth}%
                         </div>
                     </div>
                     <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Profile Reach</p>
@@ -121,9 +132,9 @@ export default function AnalyticsPage() {
                         <div className="p-3 bg-blue-50 rounded-2xl text-blue-600">
                             <MousePointer2 className="w-6 h-6" />
                         </div>
-                        <div className="flex items-center text-green-600 font-bold text-sm">
-                            <TrendingUp className="w-4 h-4 mr-1" />
-                            +5%
+                        <div className={`flex items-center font-bold text-sm ${stats.clicksGrowth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {stats.clicksGrowth >= 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <ArrowDownRight className="w-4 h-4 mr-1" />}
+                            {stats.clicksGrowth >= 0 ? '+' : ''}{stats.clicksGrowth}%
                         </div>
                     </div>
                     <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Link Interactions</p>
@@ -146,10 +157,6 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between mb-4">
                         <div className="p-3 bg-green-50 rounded-2xl text-green-600">
                             <Users className="w-6 h-6" />
-                        </div>
-                        <div className="flex items-center text-red-600 font-bold text-sm">
-                            <ArrowDownRight className="w-4 h-4 mr-1" />
-                            -2%
                         </div>
                     </div>
                     <p className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-1">Active Fans</p>

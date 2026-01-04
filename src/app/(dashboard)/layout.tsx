@@ -19,7 +19,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         )
     }
 
-    if (!hasSession) {
+    if (!hasSession && !loading) {
         redirect('/login')
     }
 
