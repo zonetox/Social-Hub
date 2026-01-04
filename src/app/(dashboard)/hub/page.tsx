@@ -7,9 +7,14 @@ import { createClient } from '@/lib/supabase/client'
 import { UserCard } from '@/components/dashboard/UserCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Input } from '@/components/ui/Input'
-import { RankingBoard } from '@/components/dashboard/RankingBoard'
 import { Search, Users, Sparkles } from 'lucide-react'
 import type { Profile } from '@/types/user.types'
+import dynamicImport from 'next/dynamic'
+
+const RankingBoard = dynamicImport(() => import('@/components/dashboard/RankingBoard').then(mod => mod.RankingBoard), {
+    loading: () => <div className="h-40 bg-gray-50 animate-pulse rounded-2xl mb-8" />,
+    ssr: false
+})
 
 export default function HubPage() {
     const [profiles, setProfiles] = useState<Profile[]>([])
@@ -43,10 +48,17 @@ export default function HubPage() {
             const { data, error } = await supabase
                 .from('profiles')
                 .select(`
-          *,
-          user:users(*),
-          social_accounts(*)
-        `)
+                    id, 
+                    display_name, 
+                    slug, 
+                    cover_image_url, 
+                    follower_count, 
+                    view_count, 
+                    location, 
+                    tags,
+                    user:users(id, username, full_name, avatar_url, bio, is_verified),
+                    social_accounts(id, platform, platform_url, display_order, is_visible)
+                `)
                 .eq('is_public', true)
                 .order('created_at', { ascending: false })
                 .returns<Profile[]>()
@@ -89,11 +101,11 @@ export default function HubPage() {
                     <Sparkles className="w-4 h-4" />
                     Community HUB
                 </div>
-                <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tighter">
+                <h1 className="text-3xl sm:text-5xl font-black text-gray-900 mb-4 tracking-tighter">
                     Discover <span className="text-transparent bg-clip-text premium-gradient">Top Creators</span>
                 </h1>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
-                    The next generation of digital networking. Connect with {profiles.length} creators across all platforms.
+                <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto font-medium px-4">
+                    The next generation of digital networking. Connect with <span className="font-bold text-gray-900">{profiles.length}</span> creators across all platforms.
                 </p>
             </div>
 
@@ -108,10 +120,10 @@ export default function HubPage() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
                             type="text"
-                            placeholder="Find a creator by name, niche or keyword..."
+                            placeholder="Find a creator..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="h-14 pl-12 bg-white/80 backdrop-blur-xl border-white/50 rounded-2xl shadow-xl focus:ring-primary-500"
+                            className="h-14 pl-12 bg-white/80 backdrop-blur-xl border-white/50 rounded-2xl shadow-xl focus:ring-primary-500 text-base"
                         />
                     </div>
                 </div>

@@ -26,6 +26,7 @@ import type { Profile } from '@/types/user.types'
 import { clsx } from 'clsx'
 import { SendCardButton } from '@/components/card/SendCardButton'
 import { DynamicIcon } from '@/components/shared/DynamicIcon'
+import Image from 'next/image'
 
 interface UserCardProps {
     profile: Profile
@@ -78,10 +79,12 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
             {/* Cover Image with Overlay */}
             <div className="relative h-32 overflow-hidden">
                 {profile.cover_image_url ? (
-                    <img
+                    <Image
                         src={profile.cover_image_url}
                         alt="Cover"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     />
                 ) : (
                     <div className="w-full h-full premium-gradient" />
@@ -103,11 +106,15 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
                     <div className="flex items-end gap-3">
                         <div className="relative group/avatar">
                             {profile.user?.avatar_url ? (
-                                <img
-                                    src={profile.user.avatar_url}
-                                    alt={profile.display_name}
-                                    className="w-20 h-20 rounded-2xl border-4 border-white shadow-2xl transition-transform group-hover/avatar:scale-105"
-                                />
+                                <div className="w-20 h-20 relative rounded-2xl border-4 border-white shadow-2xl transition-transform group-hover/avatar:scale-105 overflow-hidden">
+                                    <Image
+                                        src={profile.user.avatar_url}
+                                        alt={profile.display_name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="80px"
+                                    />
+                                </div>
                             ) : (
                                 <div className="w-20 h-20 rounded-2xl border-4 border-white shadow-2xl premium-gradient flex items-center justify-center">
                                     <span className="text-3xl font-bold text-white">
@@ -227,12 +234,11 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
                     </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-2 mt-6">
+                <div className="flex flex-col sm:flex-row gap-2 mt-6">
                     <Link href={`/${profile.slug}`} className="flex-1">
-                        <button className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gray-50 text-gray-900 border border-gray-100 hover:bg-gray-100 transition-all flex items-center justify-center gap-2 group/btn">
+                        <button className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-gray-50 text-gray-900 border border-gray-100 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center gap-2 group/btn">
                             View Profile
-                            <ExternalLink className="w-3 h-4 transition-transform group-hover/btn:translate-x-1" />
+                            <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
                         </button>
                     </Link>
 
