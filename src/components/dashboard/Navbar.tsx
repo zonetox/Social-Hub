@@ -14,7 +14,8 @@ import {
     Menu,
     X,
     Search,
-    Sparkles
+    Sparkles,
+    DollarSign
 } from 'lucide-react'
 
 export function Navbar() {
@@ -33,6 +34,7 @@ export function Navbar() {
 
     if (isAdmin) {
         navigation.push({ name: 'Admin', href: '/admin', icon: Shield })
+        navigation.push({ name: 'Payments', href: '/admin/payments', icon: DollarSign })
     }
 
     const handleSignOut = async () => {
@@ -132,14 +134,24 @@ export function Navbar() {
                                         </Link>
 
                                         {isAdmin && (
-                                            <Link
-                                                href="/admin"
-                                                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                onClick={() => setIsProfileMenuOpen(false)}
-                                            >
-                                                <Shield className="w-4 h-4" />
-                                                Admin Panel
-                                            </Link>
+                                            <>
+                                                <Link
+                                                    href="/admin"
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                    onClick={() => setIsProfileMenuOpen(false)}
+                                                >
+                                                    <Shield className="w-4 h-4" />
+                                                    Admin Panel
+                                                </Link>
+                                                <Link
+                                                    href="/admin/payments"
+                                                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                    onClick={() => setIsProfileMenuOpen(false)}
+                                                >
+                                                    <DollarSign className="w-4 h-4" />
+                                                    Manage Payments
+                                                </Link>
+                                            </>
                                         )}
 
                                         <div className="border-t border-gray-200 mt-1 pt-1">
