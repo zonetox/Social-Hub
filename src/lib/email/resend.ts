@@ -1,13 +1,18 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const getResendClient = () => {
+    if (!process.env.RESEND_API_KEY) return null;
+    return new Resend(process.env.RESEND_API_KEY);
+};
 
 /**
  * Sends an email using Resend.
  * Fallbacks to console log if API key is missing for development.
  */
 export async function sendEmail(to: string, subject: string, html: string) {
-    if (!process.env.RESEND_API_KEY) {
+    const resend = getResendClient();
+
+    if (!resend) {
         console.log('--- RESEND_API_KEY MISSING (MOCK MODE) ---')
         console.log(`To: ${to}`)
         console.log(`Subject: ${subject}`)
