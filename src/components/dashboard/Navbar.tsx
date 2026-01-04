@@ -19,6 +19,7 @@ import {
     Inbox,
     BarChart3
 } from 'lucide-react'
+import { Logo } from '@/components/shared/Logo'
 
 export function Navbar() {
     const { user, signOut, isAdmin } = useAuth()
@@ -47,19 +48,12 @@ export function Navbar() {
     }
 
     return (
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+        <nav className="glass sticky top-0 z-40 border-t-0 border-x-0 rounded-none shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between h-16">
+                <div className="flex justify-between h-20">
                     {/* Logo */}
                     <div className="flex items-center">
-                        <Link href="/hub" className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-xl flex items-center justify-center">
-                                <span className="text-xl font-bold text-white">S</span>
-                            </div>
-                            <span className="text-xl font-bold text-gray-900 hidden sm:block">
-                                Social Hub
-                            </span>
-                        </Link>
+                        <Logo size="sm" />
                     </div>
 
                     {/* Desktop Navigation */}

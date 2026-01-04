@@ -96,8 +96,9 @@ export function RegisterForm() {
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Create your account</h2>
+        <div className="bg-white/80 backdrop-blur-lg rounded-[2rem] p-10 shadow-2xl">
+            <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Get started</h2>
+            <p className="text-gray-500 mb-8 font-medium">Create your professional profile today</p>
 
             {serverError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
@@ -173,7 +174,7 @@ export function RegisterForm() {
                 <Button
                     type="submit"
                     variant="primary"
-                    className="w-full"
+                    className="w-full h-12 text-lg font-black premium-gradient border-none hover:scale-105 transition-transform"
                     isLoading={isLoading}
                 >
                     Create account

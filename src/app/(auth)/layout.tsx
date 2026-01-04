@@ -1,20 +1,23 @@
-
 import { ReactNode } from 'react'
+import { Logo } from '@/components/shared/Logo'
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4">
+        <div className="min-h-screen relative flex items-center justify-center p-4">
+            {/* Background Decorations */}
+            <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary-500/10 blur-[100px] rounded-full -z-10" />
+            <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary-500/10 blur-[100px] rounded-full -z-10" />
+
             <div className="w-full max-w-md">
-                {/* Logo */}
-                <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-2xl mb-4">
-                        <span className="text-3xl font-bold text-white">S</span>
-                    </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Social Hub</h1>
-                    <p className="text-gray-600 mt-2">Connect all your social profiles</p>
+                {/* Logo Section */}
+                <div className="flex flex-col items-center mb-10">
+                    <Logo size="lg" className="mb-4" />
+                    <p className="text-gray-500 font-medium">Connect everyone in one link</p>
                 </div>
 
-                {children}
+                <div className="glass p-1 border-white/20 rounded-[2rem] overflow-hidden">
+                    {children}
+                </div>
             </div>
         </div>
     )

@@ -8,7 +8,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 export const metadata: Metadata = {
-    title: 'Social Hub - All your links in one place',
+    title: 'Social HUB - All your links in one place',
     description: 'Create a beautiful, personalized profile to showcase all your social media accounts.',
     icons: {
         icon: '/icon.png',

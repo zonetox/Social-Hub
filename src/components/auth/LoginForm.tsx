@@ -71,8 +71,9 @@ export function LoginForm() {
     }
 
     return (
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Welcome back</h2>
+        <div className="bg-white/80 backdrop-blur-lg rounded-[2rem] p-10 shadow-2xl">
+            <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">Welcome back</h2>
+            <p className="text-gray-500 mb-8 font-medium">Please sign in to your accounts</p>
 
             {serverError && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
@@ -121,7 +122,7 @@ export function LoginForm() {
                 <Button
                     type="submit"
                     variant="primary"
-                    className="w-full"
+                    className="w-full h-12 text-lg font-black premium-gradient border-none hover:scale-105 transition-transform"
                     isLoading={isLoading}
                 >
                     Sign in
