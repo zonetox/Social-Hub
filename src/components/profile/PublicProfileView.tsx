@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { formatNumber } from '@/lib/utils/formatting'
 import { SOCIAL_PLATFORMS } from '@/lib/utils/constants'
+import { QRCodeModal } from '@/components/profile/QRCodeModal'
 import {
     Heart,
     MapPin,
@@ -18,9 +19,14 @@ import {
     Share2,
     ExternalLink,
     Copy,
-    Check
+    Check,
+    QrCode,
+    Sparkles,
+    UserPlus,
+    Plus
 } from 'lucide-react'
 import type { Profile } from '@/types/user.types'
+import clsx from 'clsx'
 
 interface PublicProfileViewProps {
     profile: Profile
@@ -30,7 +36,7 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
     const { user } = useAuth()
     const [isFollowing, setIsFollowing] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
-    const [copied, setCopied] = useState(false)
+    const [showQR, setShowQR] = useState(false)
     const supabase = createClient()
 
     const isOwnProfile = user?.id === profile.user_id
@@ -48,13 +54,6 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
                     .eq('follower_id', user.id)
                     .eq('following_id', profile.user_id)
 
-                // Track unfollow event
-                await supabase.from('analytics').insert({
-                    profile_id: profile.id,
-                    event_type: 'follow',
-                    metadata: { action: 'unfollow' }
-                } as any)
-
                 setIsFollowing(false)
             } else {
                 await supabase
@@ -63,13 +62,6 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
                         follower_id: user.id,
                         following_id: profile.user_id,
                     } as any)
-
-                // Track follow event
-                await supabase.from('analytics').insert({
-                    profile_id: profile.id,
-                    event_type: 'follow',
-                    metadata: { action: 'follow' }
-                } as any)
 
                 setIsFollowing(true)
             }
@@ -80,303 +72,234 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
         }
     }
 
-    const handleShare = async () => {
-        const url = window.location.href
-
-        try {
-            if (navigator.share) {
-                await navigator.share({
-                    title: `${profile.display_name} - Social Hub`,
-                    text: profile.user?.bio || `Check out ${profile.display_name}'s profile`,
-                    url: url,
-                })
-
-                // Track share event
-                await supabase.from('analytics').insert({
-                    profile_id: profile.id,
-                    event_type: 'share',
-                    metadata: { method: 'native_share' }
-                } as any)
-            } else {
-                await navigator.clipboard.writeText(url)
-                setCopied(true)
-                setTimeout(() => setCopied(false), 2000)
-
-                // Track share event
-                await supabase.from('analytics').insert({
-                    profile_id: profile.id,
-                    event_type: 'share',
-                    metadata: { method: 'copy_link' }
-                } as any)
-            }
-        } catch (error) {
-            console.error('Share error:', error)
-        }
-    }
-
     const handleSocialClick = async (accountId: string, url: string) => {
-        // Track click event
         try {
             await supabase.from('analytics').insert({
                 profile_id: profile.id,
                 event_type: 'click',
                 social_account_id: accountId,
             } as any)
-
-            // Increment click count
             await supabase.rpc('increment_social_click', { account_id: accountId })
         } catch (error) {
             console.error('Track click error:', error)
         }
-
-        // Open link
         window.open(url, '_blank')
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="max-w-5xl mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <a href="/hub" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-                            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-secondary-600 rounded-lg flex items-center justify-center">
-                                <span className="text-sm font-bold text-white">S</span>
-                            </div>
-                            <span className="font-semibold">Social Hub</span>
-                        </a>
-
-                        <div className="flex items-center gap-2">
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={handleShare}
-                            >
-                                {copied ? (
-                                    <>
-                                        <Check className="w-4 h-4" />
-                                        Copied!
-                                    </>
-                                ) : (
-                                    <>
-                                        <Share2 className="w-4 h-4" />
-                                        Share
-                                    </>
-                                )}
-                            </Button>
-
-                            {!isOwnProfile && user && (
-                                <Button
-                                    size="sm"
-                                    variant={isFollowing ? 'outline' : 'primary'}
-                                    onClick={handleFollow}
-                                    isLoading={isLoading}
-                                >
-                                    {isFollowing ? (
-                                        <>
-                                            <Heart className="w-4 h-4 fill-current" />
-                                            Following
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Heart className="w-4 h-4" />
-                                            Follow
-                                        </>
-                                    )}
-                                </Button>
-                            )}
-
-                            {isOwnProfile && (
-                                <a href="/profile">
-                                    <Button size="sm" variant="primary">
-                                        Edit Profile
-                                    </Button>
-                                </a>
-                            )}
-                        </div>
-                    </div>
-                </div>
+        <div className="min-h-screen relative overflow-hidden pb-20">
+            {/* Dynamic Background */}
+            <div className="fixed inset-0 -z-10">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary-500/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-secondary-500/10 blur-[120px] rounded-full" />
             </div>
 
+            {/* Premium Navbar */}
+            <nav className="sticky top-4 z-50 max-w-5xl mx-auto px-4">
+                <div className="glass px-6 py-3 rounded-2xl flex items-center justify-between border-white/40 shadow-2xl">
+                    <a href="/hub" className="flex items-center gap-2 group">
+                        <div className="w-10 h-10 premium-gradient rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12">
+                            <Sparkles className="text-white w-5 h-5" />
+                        </div>
+                        <span className="font-black text-gray-900 tracking-tighter text-xl hidden sm:block">Social HUB</span>
+                    </a>
+
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowQR(true)}
+                            className="p-3 bg-white/80 hover:bg-white rounded-xl border border-gray-100 shadow-sm transition-all hover:scale-110 text-gray-700"
+                            title="Digital Business Card"
+                        >
+                            <QrCode className="w-5 h-5" />
+                        </button>
+
+                        {!isOwnProfile && user && (
+                            <Button
+                                size="sm"
+                                variant={isFollowing ? 'outline' : 'primary'}
+                                onClick={handleFollow}
+                                isLoading={isLoading}
+                                className={clsx(
+                                    "rounded-xl font-bold h-11 px-6",
+                                    !isFollowing && "premium-gradient border-none shadow-lg animate-glow"
+                                )}
+                            >
+                                {isFollowing ? 'Following' : 'Follow Creator'}
+                            </Button>
+                        )}
+
+                        {isOwnProfile && (
+                            <a href="/profile">
+                                <Button size="sm" className="premium-gradient border-none rounded-xl h-11 px-6 text-white font-bold shadow-lg">
+                                    Manage Hub
+                                </Button>
+                            </a>
+                        )}
+                    </div>
+                </div>
+            </nav>
+
             {/* Profile Content */}
-            <div className="max-w-5xl mx-auto px-4 py-8">
-                <Card className="mb-6">
-                    {/* Cover Image */}
-                    {profile.cover_image_url ? (
-                        <div className="h-64 bg-gradient-to-r from-primary-400 to-secondary-400">
+            <main className="max-w-4xl mx-auto px-4 mt-12">
+                <Card variant="glass" className="border-none shadow-2xl overflow-hidden mb-12">
+                    {/* Artistic Cover */}
+                    <div className="h-64 relative group overflow-hidden">
+                        {profile.cover_image_url ? (
                             <img
                                 src={profile.cover_image_url}
                                 alt="Cover"
-                                className="w-full h-full object-cover"
+                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
-                        </div>
-                    ) : (
-                        <div className="h-64 bg-gradient-to-r from-primary-400 to-secondary-400" />
-                    )}
+                        ) : (
+                            <div className="w-full h-full premium-gradient animate-gradient-xy" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
-                    <div className="p-8">
-                        {/* Avatar */}
-                        <div className="flex flex-col md:flex-row md:items-end gap-6 -mt-24 mb-6">
-                            {profile.user?.avatar_url ? (
-                                <img
-                                    src={profile.user.avatar_url}
-                                    alt={profile.display_name}
-                                    className="w-40 h-40 rounded-full border-4 border-white shadow-xl"
-                                />
-                            ) : (
-                                <div className="w-40 h-40 rounded-full border-4 border-white shadow-xl bg-gradient-to-br from-primary-400 to-secondary-400 flex items-center justify-center">
-                                    <span className="text-5xl font-bold text-white">
-                                        {profile.display_name.charAt(0)}
-                                    </span>
-                                </div>
+                        {/* Quick Action Badges */}
+                        <div className="absolute top-6 left-6 flex gap-2">
+                            <Badge variant="glass-dark" className="border-white/20">
+                                <Globe className="w-3 h-3 mr-1" />
+                                {formatNumber(profile.view_count)} Views
+                            </Badge>
+                            {profile.follower_count > 10 && (
+                                <Badge variant="gold">
+                                    ★ Top 10 Creator
+                                </Badge>
                             )}
-
-                            <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                    <h1 className="text-4xl font-bold text-gray-900">
-                                        {profile.display_name}
-                                    </h1>
-                                    {profile.user?.is_verified && (
-                                        <CheckCircle className="w-8 h-8 text-primary-600 fill-current" />
-                                    )}
-                                </div>
-                                <p className="text-xl text-gray-600 mb-4">@{profile.user?.username}</p>
-                            </div>
                         </div>
+                    </div>
 
-                        {/* Bio */}
-                        {profile.user?.bio && (
-                            <p className="text-lg text-gray-700 mb-6 max-w-3xl">
-                                {profile.user.bio}
+                    <div className="p-8 md:p-12 relative">
+                        {/* Avatar Redesign */}
+                        <div className="flex flex-col items-center text-center -mt-32 mb-8 relative z-10">
+                            <div className="relative mb-6">
+                                {profile.user?.avatar_url ? (
+                                    <img
+                                        src={profile.user.avatar_url}
+                                        alt={profile.display_name}
+                                        className="w-48 h-48 rounded-[3rem] border-8 border-white shadow-2xl object-cover animate-float"
+                                    />
+                                ) : (
+                                    <div className="w-48 h-48 rounded-[3rem] border-8 border-white shadow-2xl premium-gradient flex items-center justify-center animate-float">
+                                        <span className="text-7xl font-bold text-white">
+                                            {profile.display_name.charAt(0)}
+                                        </span>
+                                    </div>
+                                )}
+                                {profile.user?.is_verified && (
+                                    <div className="absolute bottom-4 right-4 bg-white rounded-2xl p-2 shadow-xl border border-gray-100">
+                                        <CheckCircle className="w-8 h-8 text-primary-500 fill-current" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <h1 className="text-5xl font-black text-gray-900 tracking-tighter mb-2">
+                                {profile.display_name}
+                            </h1>
+                            <p className="text-xl font-bold text-primary-600 mb-6 bg-primary-50 px-4 py-1 rounded-full border border-primary-100">
+                                @{profile.user?.username}
                             </p>
-                        )}
 
-                        {/* Meta Info */}
-                        <div className="flex flex-wrap gap-6 text-gray-600 mb-6">
-                            {profile.location && (
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-5 h-5" />
-                                    <span>{profile.location}</span>
+                            {profile.user?.bio && (
+                                <p className="text-xl text-gray-600 max-w-2xl font-medium leading-relaxed italic">
+                                    "{profile.user.bio}"
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Meta Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-8 border-y border-gray-100/50 mb-12">
+                            <div className="text-center group">
+                                <p className="text-3xl font-black text-gray-900 group-hover:text-primary-600 transition-colors">
+                                    {formatNumber(profile.follower_count)}
+                                </p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fans</p>
+                            </div>
+                            <div className="text-center group">
+                                <p className="text-3xl font-black text-gray-900 group-hover:text-primary-600 transition-colors">
+                                    {formatNumber(visibleAccounts.length)}
+                                </p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Connects</p>
+                            </div>
+                            <div className="text-center group">
+                                <p className="text-3xl font-black text-gray-900 group-hover:text-primary-600 transition-colors">
+                                    {formatNumber(profile.view_count)}
+                                </p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Reach</p>
+                            </div>
+                            <div className="text-center group">
+                                <div className="flex items-center justify-center gap-1 text-3xl font-black text-gray-900">
+                                    <MapPin className="w-5 h-5 text-gray-400" />
+                                    <span className="truncate max-w-[100px]">{profile.location?.split(',')[0] || 'Web'}</span>
                                 </div>
-                            )}
-                            {profile.website && (
-                                <a
-                                    href={profile.website}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-primary-600 hover:text-primary-700"
-                                >
-                                    <Link2 className="w-5 h-5" />
-                                    <span>{new URL(profile.website).hostname}</span>
-                                </a>
-                            )}
-                            <div className="flex items-center gap-2">
-                                <Globe className="w-5 h-5" />
-                                <span>{formatNumber(profile.view_count)} views</span>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Base</p>
                             </div>
                         </div>
 
-                        {/* Tags */}
-                        {profile.tags && profile.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mb-6">
-                                {profile.tags.map((tag, index) => (
-                                    <Badge key={index} variant="info" className="text-base px-4 py-1">
-                                        {tag}
-                                    </Badge>
-                                ))}
+                        {/* Social Links Layout - Premium Style */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-gray-200" />
+                                <h2 className="text-sm font-black text-gray-400 uppercase tracking-[0.3em]">Official Links</h2>
+                                <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-gray-200" />
                             </div>
-                        )}
 
-                        {/* Stats */}
-                        <div className="flex gap-8 pt-6 border-t border-gray-200">
-                            <div>
-                                <span className="text-2xl font-bold text-gray-900">
-                                    {formatNumber(profile.follower_count)}
-                                </span>
-                                <span className="text-gray-600 ml-2">Followers</span>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {visibleAccounts.map((account) => {
+                                    const platform = SOCIAL_PLATFORMS.find(p => p.name === account.platform)
+                                    return (
+                                        <button
+                                            key={account.id}
+                                            onClick={() => handleSocialClick(account.id, account.platform_url)}
+                                            className="group relative flex items-center gap-4 p-5 bg-white/60 hover:bg-white rounded-[2rem] border border-white/50 shadow-sm transition-all hover:scale-[1.03] hover:shadow-2xl text-left"
+                                        >
+                                            <div
+                                                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:rotate-12 group-hover:scale-110"
+                                                style={{ backgroundColor: platform?.color || '#6366f1' }}
+                                            >
+                                                <ExternalLink className="w-8 h-8 opacity-80" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between">
+                                                    <h3 className="text-lg font-black text-gray-900">{account.platform}</h3>
+                                                    <span className="text-[10px] font-black text-primary-600 bg-primary-50 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        {formatNumber(account.click_count)} CLICKS
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-500 font-medium truncate">@{account.platform_username}</p>
+                                            </div>
+                                        </button>
+                                    )
+                                })}
                             </div>
-                            <div>
-                                <span className="text-2xl font-bold text-gray-900">
-                                    {formatNumber(profile.following_count)}
-                                </span>
-                                <span className="text-gray-600 ml-2">Following</span>
-                            </div>
-                            <div>
-                                <span className="text-2xl font-bold text-gray-900">
-                                    {formatNumber(visibleAccounts.length)}
-                                </span>
-                                <span className="text-gray-600 ml-2">Accounts</span>
-                            </div>
+
+                            {visibleAccounts.length === 0 && (
+                                <div className="py-20 text-center text-gray-400">
+                                    <Globe className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                    <p className="font-bold">This creator hasn't linked any socials yet.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </Card>
+            </main>
 
-                {/* Social Accounts */}
-                {visibleAccounts.length > 0 && (
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                            Social Accounts
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {visibleAccounts.map((account) => {
-                                const platform = SOCIAL_PLATFORMS.find(
-                                    p => p.name === account.platform
-                                )
+            {/* Modals */}
+            <QRCodeModal
+                isOpen={showQR}
+                onClose={() => setShowQR(false)}
+                url={typeof window !== 'undefined' ? window.location.href : ''}
+                display_name={profile.display_name}
+            />
 
-                                return (
-                                    <Card
-                                        key={account.id}
-                                        hover
-                                        className="p-6 cursor-pointer transition-all hover:scale-[1.02]"
-                                        onClick={() => handleSocialClick(account.id, account.platform_url)}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div
-                                                className="w-16 h-16 rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-lg"
-                                                style={{ backgroundColor: platform?.color || '#6B7280' }}
-                                            >
-                                                <span className="text-2xl font-bold">
-                                                    {account.platform.charAt(0)}
-                                                </span>
-                                            </div>
-
-                                            <div className="flex-1 min-w-0">
-                                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                                                    {account.platform}
-                                                </h3>
-                                                <p className="text-gray-600 truncate">
-                                                    @{account.platform_username}
-                                                </p>
-                                                <p className="text-sm text-gray-500 mt-1">
-                                                    {formatNumber(account.click_count)} clicks
-                                                </p>
-                                            </div>
-
-                                            <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-primary-600 flex-shrink-0" />
-                                        </div>
-                                    </Card>
-                                )
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {visibleAccounts.length === 0 && (
-                    <Card className="p-12 text-center">
-                        <div className="text-gray-400 mb-4">
-                            <Globe className="w-12 h-12 mx-auto" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            No social accounts yet
-                        </h3>
-                        <p className="text-gray-600">
-                            {isOwnProfile
-                                ? "Add your first social media account to get started"
-                                : "This user hasn't added any social accounts yet"}
-                        </p>
-                    </Card>
-                )}
-            </div>
+            {/* Premium Decor Footer */}
+            <footer className="text-center mt-20">
+                <div className="inline-flex items-center gap-2 text-gray-400 font-bold text-xs uppercase tracking-widest">
+                    <span>Profile Secured by</span>
+                    <Sparkles className="w-4 h-4 text-primary-500" />
+                    <span className="text-gray-900 font-black">Social Hub</span>
+                </div>
+            </footer>
         </div>
     )
 }

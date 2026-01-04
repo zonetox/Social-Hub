@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/client'
 import { UserCard } from '@/components/dashboard/UserCard'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { Input } from '@/components/ui/Input'
-import { Search, Users } from 'lucide-react'
+import { RankingBoard } from '@/components/dashboard/RankingBoard'
+import { Search, Users, Sparkles } from 'lucide-react'
 import type { Profile } from '@/types/user.types'
 
 export default function HubPage() {
@@ -77,28 +78,42 @@ export default function HubPage() {
     }
 
     return (
-        <div>
+        <div className="relative">
+            {/* Artistic Header Background */}
+            <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary-400/20 blur-[100px] rounded-full -z-10 animate-pulse" />
+            <div className="absolute top-40 -right-20 w-96 h-96 bg-secondary-400/20 blur-[120px] rounded-full -z-10" />
+
             {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    Discover Creators
+            <div className="mb-10 text-center">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/50 backdrop-blur-md border border-white/20 text-primary-600 text-sm font-bold mb-4 animate-float">
+                    <Sparkles className="w-4 h-4" />
+                    Community HUB
+                </div>
+                <h1 className="text-5xl font-black text-gray-900 mb-4 tracking-tighter">
+                    Discover <span className="text-transparent bg-clip-text premium-gradient">Top Creators</span>
                 </h1>
-                <p className="text-gray-600">
-                    Connect with {profiles.length} creators and follow all their social accounts in one click
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto font-medium">
+                    The next generation of digital networking. Connect with {profiles.length} creators across all platforms.
                 </p>
             </div>
 
-            {/* Search */}
-            <div className="mb-6">
-                <div className="relative">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                        type="text"
-                        placeholder="Search by name, username, or tags..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-12"
-                    />
+            {/* Top Creators Ranking */}
+            <RankingBoard profiles={profiles} />
+
+            {/* Search & Filter Bar */}
+            <div className="mb-10 sticky top-4 z-20">
+                <div className="relative max-w-2xl mx-auto group">
+                    <div className="absolute -inset-1 premium-gradient rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500" />
+                    <div className="relative">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                        <Input
+                            type="text"
+                            placeholder="Find a creator by name, niche or keyword..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-14 pl-12 bg-white/80 backdrop-blur-xl border-white/50 rounded-2xl shadow-xl focus:ring-primary-500"
+                        />
+                    </div>
                 </div>
             </div>
 

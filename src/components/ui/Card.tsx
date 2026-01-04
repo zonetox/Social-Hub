@@ -5,16 +5,20 @@ import { clsx } from 'clsx'
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
     hover?: boolean
+    variant?: 'default' | 'glass' | 'glass-dark'
 }
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
-    ({ className, hover = false, children, ...props }, ref) => {
+    ({ className, hover = false, variant = 'default', children, ...props }, ref) => {
         return (
             <div
                 ref={ref}
                 className={clsx(
-                    'bg-white rounded-xl border border-gray-200 shadow-sm',
-                    hover && 'transition-all hover:shadow-md hover:border-gray-300',
+                    variant === 'default' && 'bg-white border border-gray-200 shadow-sm',
+                    variant === 'glass' && 'glass',
+                    variant === 'glass-dark' && 'glass-dark',
+                    'rounded-2xl',
+                    hover && 'transition-all duration-300 hover:shadow-xl hover:-translate-y-1',
                     className
                 )}
                 {...props}
