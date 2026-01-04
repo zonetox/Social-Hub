@@ -15,6 +15,7 @@ import {
     BarChart3
 } from 'lucide-react'
 import type { SocialAccount } from '@/types/user.types'
+import { DynamicIcon } from '@/components/shared/DynamicIcon'
 
 interface SocialAccountsListProps {
     accounts: SocialAccount[]
@@ -90,9 +91,7 @@ export function SocialAccountsList({ accounts, onUpdate }: SocialAccountsListPro
                                 className="w-12 h-12 rounded-lg flex items-center justify-center text-white flex-shrink-0"
                                 style={{ backgroundColor: platform?.color || '#6B7280' }}
                             >
-                                <span className="text-xl font-bold">
-                                    {account.platform.charAt(0)}
-                                </span>
+                                <DynamicIcon name={platform?.icon || 'globe'} className="w-6 h-6" />
                             </div>
 
                             {/* Account Info */}

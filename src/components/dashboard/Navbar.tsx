@@ -16,7 +16,8 @@ import {
     Search,
     Sparkles,
     DollarSign,
-    Inbox
+    Inbox,
+    BarChart3
 } from 'lucide-react'
 
 export function Navbar() {
@@ -29,6 +30,7 @@ export function Navbar() {
     const navigation = [
         { name: 'Hub', href: '/hub', icon: Home },
         { name: 'My Profile', href: '/profile', icon: User },
+        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
         { name: 'Settings', href: '/settings', icon: Settings },
         { name: 'My Cards', href: '/cards', icon: Inbox },
         { name: 'Pricing', href: '/pricing', icon: Sparkles },

@@ -25,6 +25,8 @@ interface ProfileHeaderProps {
     onUpdate: () => void
 }
 
+import { toast } from 'react-hot-toast'
+
 export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [formData, setFormData] = useState({
@@ -98,9 +100,9 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
         const url = `${window.location.origin}/${profile.slug}`
         try {
             await navigator.clipboard.writeText(url)
-            alert('Profile link copied to clipboard!')
+            toast.success('Profile link copied to clipboard!')
         } catch (error) {
-            alert(`Share this link: ${url}`)
+            toast.error(`Could not copy link. Share this URL: ${url}`, { duration: 6000 })
         }
     }
 

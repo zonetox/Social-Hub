@@ -39,6 +39,7 @@ export async function GET(request: Request) {
     const supabase = createServerClient()
     const { searchParams } = new URL(request.url)
     const profileId = searchParams.get('profileId')
+    const days = parseInt(searchParams.get('days') || '7')
 
     const { data: { session } } = await supabase.auth.getSession()
 
@@ -46,25 +47,70 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Access control: Only admins or profile owners can view full analytics
-    if (profileId) {
+    // Access control: Only admins or profile owners can view analytics
+    if (!profileId) {
+        // Only admins can view global analytics if no profileId is provided
+        const { data: user } = await supabase.from('users').select('role').eq('id', session.user.id).single() as any
+        if (user?.role !== 'admin') {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+    } else {
         const { data: profile } = await supabase.from('profiles').select('user_id').eq('id', profileId).single() as any
         if (profile?.user_id !== session.user.id) {
-            // Check if admin
             const { data: user } = await supabase.from('users').select('role').eq('id', session.user.id).single() as any
             if (user?.role !== 'admin') {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
             }
         }
-    } else {
-        // Only admins can view global analytics
-        const { data: user } = await supabase.from('users').select('role').eq('id', session.user.id).single() as any
-        if (user?.role !== 'admin') {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-        }
     }
 
-    // ... Implementation for fetching analytics data would go here
-    // For now returning simple success as more complex queries might be needed
-    return NextResponse.json({ message: 'Analytics endpoint ready' })
+    // Fetch analytics data
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - days)
+
+    let query = supabase
+        .from('analytics')
+        .select('created_at, event_type')
+        .gte('created_at', startDate.toISOString())
+        .order('created_at', { ascending: true })
+
+    if (profileId) {
+        query = query.eq('profile_id', profileId)
+    }
+
+    const { data, error } = await query as any
+
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    // Process data into daily buckets
+    const dailyStats: Record<string, { views: number; clicks: number; date: string }> = {}
+
+    // Initialize all days in the range
+    for (let i = 0; i <= days; i++) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dateStr = d.toISOString().split('T')[0]
+        dailyStats[dateStr] = { views: 0, clicks: 0, date: dateStr }
+    }
+
+    data.forEach((event: any) => {
+        const dateStr = event.created_at.split('T')[0]
+        if (dailyStats[dateStr]) {
+            if (event.event_type === 'view') dailyStats[dateStr].views++
+            if (event.event_type === 'click') dailyStats[dateStr].clicks++
+        }
+    })
+
+    // Convert to sorted array
+    const chartData = Object.values(dailyStats).sort((a, b) => a.date.localeCompare(b.date))
+
+    return NextResponse.json({
+        chartData,
+        summary: {
+            totalViews: data.filter((e: any) => e.event_type === 'view').length,
+            totalClicks: data.filter((e: any) => e.event_type === 'click').length,
+        }
+    })
 }

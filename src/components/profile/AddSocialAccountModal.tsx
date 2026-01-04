@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { SOCIAL_PLATFORMS } from '@/lib/utils/constants'
 import { socialAccountSchema } from '@/lib/utils/validation'
+import { DynamicIcon } from '@/components/shared/DynamicIcon'
 
 interface AddSocialAccountModalProps {
     isOpen: boolean
@@ -135,9 +136,7 @@ export function AddSocialAccountModal({
                                 className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
                                 style={{ backgroundColor: selectedPlatform.color }}
                             >
-                                <span className="text-lg font-bold">
-                                    {selectedPlatform.name.charAt(0)}
-                                </span>
+                                <DynamicIcon name={selectedPlatform.icon} className="w-6 h-6" />
                             </div>
                             <div>
                                 <p className="font-medium text-gray-900">

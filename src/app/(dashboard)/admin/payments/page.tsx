@@ -20,6 +20,7 @@ import {
     Building
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
+import { toast } from 'react-hot-toast'
 import type { PaymentTransaction } from '@/types/payment.types'
 
 export default function AdminPaymentsPage() {
@@ -141,11 +142,11 @@ export default function AdminPaymentsPage() {
                 })
             }
 
-            alert('Payment approved successfully!')
+            toast.success('Payment approved successfully!')
             fetchTransactions()
         } catch (error) {
             console.error('Approve error:', error)
-            alert('Failed to approve payment')
+            toast.error('Failed to approve payment')
         }
     }
 
@@ -165,11 +166,11 @@ export default function AdminPaymentsPage() {
 
             if (error) throw error
 
-            alert('Payment rejected')
+            toast.success('Payment rejected')
             fetchTransactions()
         } catch (error) {
             console.error('Reject error:', error)
-            alert('Failed to reject payment')
+            toast.error('Failed to reject payment')
         }
     }
 

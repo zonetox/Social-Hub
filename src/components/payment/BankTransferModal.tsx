@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Upload, Copy, Check, AlertCircle } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import type { BankTransferInfo, SubscriptionPlan } from '@/types/payment.types'
 
 interface BankTransferModalProps {
@@ -79,7 +80,7 @@ export function BankTransferModal({
             setProofImage(file)
         } catch (error) {
             console.error('Upload error:', error)
-            alert('Failed to upload image')
+            toast.error('Failed to upload image')
         } finally {
             setUploading(false)
         }
@@ -87,7 +88,7 @@ export function BankTransferModal({
 
     const handleSubmit = async () => {
         if (!user || !selectedBank || !proofUrl) {
-            alert('Please upload payment proof')
+            toast.error('Please upload payment proof')
             return
         }
 
@@ -111,11 +112,11 @@ export function BankTransferModal({
                 }
             })
 
-            alert('Payment submitted! We will verify and activate your account within 24 hours.')
+            toast.success('Payment submitted! We will verify and activate your account within 24 hours.')
             onClose()
         } catch (error) {
             console.error('Submit error:', error)
-            alert('Failed to submit payment')
+            toast.error('Failed to submit payment')
         }
     }
 

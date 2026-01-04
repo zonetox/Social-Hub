@@ -25,6 +25,7 @@ import {
 import type { Profile } from '@/types/user.types'
 import { clsx } from 'clsx'
 import { SendCardButton } from '@/components/card/SendCardButton'
+import { DynamicIcon } from '@/components/shared/DynamicIcon'
 
 interface UserCardProps {
     profile: Profile
@@ -210,7 +211,7 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
                                         className="aspect-square rounded-xl flex items-center justify-center text-white transition-all hover:scale-110 hover:skew-y-3 shadow-sm hover:shadow-md"
                                         style={{ backgroundColor: platform?.color || '#6366f1' }}
                                     >
-                                        <Globe className="w-5 h-5" />
+                                        <DynamicIcon name={platform?.icon || 'globe'} className="w-5 h-5" />
                                     </a>
                                 )
                             })}

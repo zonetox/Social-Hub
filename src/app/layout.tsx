@@ -10,6 +10,8 @@ export const metadata: Metadata = {
     description: 'Create a beautiful, personalized profile to showcase all your social media accounts.',
 }
 
+import { Toaster } from 'react-hot-toast'
+
 export default function RootLayout({
     children,
 }: {
@@ -18,6 +20,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${inter.variable} font-sans antialiased text-gray-900 bg-gray-50`}>
+                <Toaster position="top-right" />
                 {children}
             </body>
         </html>
