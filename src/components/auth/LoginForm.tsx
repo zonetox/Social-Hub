@@ -58,8 +58,11 @@ export function LoginForm() {
                 throw new Error('Your account has been deactivated')
             }
 
-            router.push('/hub')
             router.refresh()
+            // Small delay to ensure AuthContext catches the state change event
+            setTimeout(() => {
+                router.push('/hub')
+            }, 100)
         } catch (error: any) {
             setServerError(error.message || 'Invalid email or password')
         } finally {

@@ -1,4 +1,6 @@
 
+export const dynamic = 'force-dynamic'
+
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -8,6 +10,10 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
     title: 'Social Hub - All your links in one place',
     description: 'Create a beautiful, personalized profile to showcase all your social media accounts.',
+    icons: {
+        icon: '/icon.png',
+        apple: '/icon.png',
+    },
 }
 
 import { Toaster } from 'react-hot-toast'

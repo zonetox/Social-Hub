@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .single()
 
             if (error) {
-                console.error('Error fetching user record:', error)
+                console.warn('Error fetching user record (might be sync delay):', error)
                 return null
             }
             return data as User

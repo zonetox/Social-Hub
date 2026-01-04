@@ -68,25 +68,25 @@ export function RegisterForm() {
             const { data: authData, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
+                options: {
+                    data: {
+                        full_name: formData.full_name,
+                        username: formData.username
+                    }
+                }
             })
 
             if (authError) throw authError
             if (!authData.user) throw new Error('Failed to create user')
 
-            // Create user in users table
-            const { error: userError } = await supabase
-                .from('users')
-                .insert({
-                    id: authData.user.id,
-                    email: formData.email,
-                    username: formData.username,
-                    full_name: formData.full_name,
-                } as any)
+            // The user record and profile are now handled ATOMICALLY by 
+            // the Database Trigger on_auth_user_created in Supabase.
+            // This is safer and faster for thousands of users.
 
-            if (userError) throw userError
-
-            router.push('/hub')
             router.refresh()
+            setTimeout(() => {
+                router.push('/hub')
+            }, 100)
         } catch (error: any) {
             console.error('Registration error:', error)
             setServerError(error.message || 'Failed to create account')
