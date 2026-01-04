@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 }
 
 import { Toaster } from 'react-hot-toast'
+import { AuthProvider } from '@/lib/contexts/AuthContext'
 
 export default function RootLayout({
     children,
@@ -20,8 +21,10 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className={`${inter.variable} font-sans antialiased text-gray-900 bg-gray-50`}>
-                <Toaster position="top-right" />
-                {children}
+                <AuthProvider>
+                    <Toaster position="top-right" />
+                    {children}
+                </AuthProvider>
             </body>
         </html>
     )
