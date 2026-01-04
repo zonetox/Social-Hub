@@ -13,7 +13,8 @@ import {
     LogOut,
     Menu,
     X,
-    Search
+    Search,
+    Sparkles
 } from 'lucide-react'
 
 export function Navbar() {
@@ -27,6 +28,7 @@ export function Navbar() {
         { name: 'Hub', href: '/hub', icon: Home },
         { name: 'My Profile', href: '/profile', icon: User },
         { name: 'Settings', href: '/settings', icon: Settings },
+        { name: 'Upgrade', href: '/upgrade', icon: Sparkles },
     ]
 
     if (isAdmin) {
@@ -64,8 +66,8 @@ export function Navbar() {
                                     key={item.name}
                                     href={item.href}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-primary-50 text-primary-700'
-                                            : 'text-gray-700 hover:bg-gray-100'
+                                        ? 'bg-primary-50 text-primary-700'
+                                        : 'text-gray-700 hover:bg-gray-100'
                                         }`}
                                 >
                                     <Icon className="w-4 h-4" />
@@ -176,8 +178,8 @@ export function Navbar() {
                                     href={item.href}
                                     onClick={() => setIsMenuOpen(false)}
                                     className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-primary-50 text-primary-700'
-                                            : 'text-gray-700 hover:bg-gray-100'
+                                        ? 'bg-primary-50 text-primary-700'
+                                        : 'text-gray-700 hover:bg-gray-100'
                                         }`}
                                 >
                                     <Icon className="w-5 h-5" />
