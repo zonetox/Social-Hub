@@ -24,6 +24,7 @@ import {
 } from 'lucide-react'
 import type { Profile } from '@/types/user.types'
 import { clsx } from 'clsx'
+import { SendCardButton } from '@/components/card/SendCardButton'
 
 interface UserCardProps {
     profile: Profile
@@ -225,13 +226,25 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
                     </div>
                 )}
 
-                {/* View Profile Action */}
-                <Link href={`/${profile.slug}`} className="block mt-6">
-                    <button className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gray-50 text-gray-900 border border-gray-100 hover:bg-gray-100 transition-all flex items-center justify-center gap-2 group/btn">
-                        View Digital Profile
-                        <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
-                    </button>
-                </Link>
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-6">
+                    <Link href={`/${profile.slug}`} className="flex-1">
+                        <button className="w-full py-3 px-4 rounded-xl font-bold text-sm bg-gray-50 text-gray-900 border border-gray-100 hover:bg-gray-100 transition-all flex items-center justify-center gap-2 group/btn">
+                            View Profile
+                            <ExternalLink className="w-3 h-4 transition-transform group-hover/btn:translate-x-1" />
+                        </button>
+                    </Link>
+
+                    {!isOwnProfile && user && (
+                        <div className="flex-1">
+                            <SendCardButton
+                                receiverId={profile.user_id}
+                                receiverName={profile.display_name}
+                                profileId={profile.id}
+                            />
+                        </div>
+                    )}
+                </div>
             </div>
         </Card>
     )

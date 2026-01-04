@@ -15,7 +15,8 @@ import {
     X,
     Search,
     Sparkles,
-    DollarSign
+    DollarSign,
+    Inbox
 } from 'lucide-react'
 
 export function Navbar() {
@@ -29,6 +30,7 @@ export function Navbar() {
         { name: 'Hub', href: '/hub', icon: Home },
         { name: 'My Profile', href: '/profile', icon: User },
         { name: 'Settings', href: '/settings', icon: Settings },
+        { name: 'My Cards', href: '/cards', icon: Inbox },
         { name: 'Pricing', href: '/pricing', icon: Sparkles },
     ]
 
@@ -122,6 +124,15 @@ export function Navbar() {
                                         >
                                             <User className="w-4 h-4" />
                                             My Profile
+                                        </Link>
+
+                                        <Link
+                                            href="/cards"
+                                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            onClick={() => setIsProfileMenuOpen(false)}
+                                        >
+                                            <Inbox className="w-4 h-4" />
+                                            My Cards
                                         </Link>
 
                                         <Link
