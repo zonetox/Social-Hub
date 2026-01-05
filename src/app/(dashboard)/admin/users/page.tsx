@@ -18,7 +18,8 @@ import {
     CheckCircle,
     XCircle,
     Mail,
-    Eye
+    Eye,
+    Upload
 } from 'lucide-react'
 import { redirect } from 'next/navigation'
 import type { User } from '@/types/user.types'
@@ -134,9 +135,17 @@ export default function AdminUsersPage() {
 
     return (
         <div>
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
-                <p className="text-gray-600">Manage all users on the platform</p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
+                    <p className="text-gray-600">Manage all users on the platform</p>
+                </div>
+                <Link href="/admin/users/bulk-import">
+                    <Button className="w-full md:w-auto">
+                        <Upload className="w-4 h-4 mr-2" />
+                        Bulk Import Profiles
+                    </Button>
+                </Link>
             </div>
 
             {/* Stats */}

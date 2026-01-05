@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { Button } from '@/components/ui/Button'
+import { SmartSearch } from '@/components/dashboard/SmartSearch'
 import {
     Home,
     User,
@@ -17,7 +18,8 @@ import {
     Sparkles,
     DollarSign,
     Inbox,
-    BarChart3
+    BarChart3,
+    Users
 } from 'lucide-react'
 import { Logo } from '@/components/shared/Logo'
 
@@ -27,11 +29,24 @@ export function Navbar() {
     const router = useRouter()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault()
+                setIsSearchOpen(true)
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
 
     const navigation = [
         { name: 'Hub', href: '/hub', icon: Home },
         { name: 'My Profile', href: '/profile', icon: User },
         { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        { name: 'Contacts', href: '/contacts', icon: Users },
         { name: 'Settings', href: '/settings', icon: Settings },
         { name: 'My Cards', href: '/cards', icon: Inbox },
         { name: 'Pricing', href: '/pricing', icon: Sparkles },
@@ -80,8 +95,15 @@ export function Navbar() {
                     {/* User Menu */}
                     <div className="flex items-center gap-4">
                         {/* Search */}
-                        <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors hidden sm:block">
-                            <Search className="w-5 h-5 text-gray-600" />
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors hidden sm:block relative group"
+                            title="Tìm kiếm (Ctrl+K)"
+                        >
+                            <Search className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors" />
+                            <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-[10px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                Ctrl + K
+                            </span>
                         </button>
 
                         {/* Profile Dropdown */}
@@ -129,6 +151,15 @@ export function Navbar() {
                                         >
                                             <Inbox className="w-4 h-4" />
                                             My Cards
+                                        </Link>
+
+                                        <Link
+                                            href="/contacts"
+                                            className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            onClick={() => setIsProfileMenuOpen(false)}
+                                        >
+                                            <Users className="w-4 h-4" />
+                                            Online Contacts
                                         </Link>
 
                                         <Link
@@ -212,7 +243,7 @@ export function Navbar() {
 
             {/* Mobile Bottom Navigation - Visible only on small screens */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-200 px-6 py-3 z-50 flex justify-between items-center safe-area-inset-bottom">
-                {navigation.slice(0, 4).map((item) => {
+                {navigation.slice(0, 5).map((item) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href
                     return (
@@ -230,6 +261,11 @@ export function Navbar() {
             </div>
             {/* Spacer for bottom nav */}
             <div className="h-20 md:hidden" />
+
+            <SmartSearch
+                isOpen={isSearchOpen}
+                onClose={() => setIsSearchOpen(false)}
+            />
         </nav>
     )
 }

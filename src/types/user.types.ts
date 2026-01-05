@@ -13,6 +13,16 @@ export interface User {
     updated_at: string
 }
 
+export interface ThemeConfig {
+    primaryColor?: string
+    backgroundType?: 'gradient' | 'image' | 'solid'
+    backgroundValue?: string
+    fontFamily?: string
+    borderRadius?: string
+    glassOpacity?: number
+    cardStyle?: 'glass' | 'solid' | 'outline'
+}
+
 export interface Profile {
     id: string
     user_id: string
@@ -26,6 +36,7 @@ export interface Profile {
     view_count: number
     follower_count: number
     following_count: number
+    theme_config?: ThemeConfig
     created_at: string
     updated_at: string
     user?: User
