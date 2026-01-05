@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Card } from '@/components/ui/Card'
@@ -41,6 +41,33 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
 
     const isOwnProfile = user?.id === profile.user_id
     const visibleAccounts = profile.social_accounts?.filter(acc => acc.is_visible) || []
+
+    useEffect(() => {
+        // Track view on mount (client-side)
+        const trackView = async () => {
+            try {
+                // Avoid tracking own views
+                if (isOwnProfile) return
+
+                await fetch('/api/analytics', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        profile_id: profile.id,
+                        event_type: 'view',
+                        metadata: {
+                            referrer: document.referrer,
+                            userAgent: navigator.userAgent
+                        }
+                    })
+                })
+            } catch (error) {
+                console.error('Track view error:', error)
+            }
+        }
+
+        trackView()
+    }, [profile.id, isOwnProfile])
 
     const handleFollow = async () => {
         if (!user || isOwnProfile) return

@@ -11,9 +11,11 @@ const getResendClient = () => {
  */
 export async function sendEmail(to: string, subject: string, html: string) {
     const resend = getResendClient();
+    const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'Social HUB <noreply@social-hub.com>';
 
     if (!resend) {
-        console.log('--- RESEND_API_KEY MISSING (MOCK MODE) ---')
+        console.log('--- EMAIL MOCK MODE ---')
+        console.log(`From: ${from}`)
         console.log(`To: ${to}`)
         console.log(`Subject: ${subject}`)
         console.log('--- END MOCK ---')
@@ -22,7 +24,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'Social HUB <noreply@social-hub.com>', // Replace with your verified domain later
+            from: from,
             to: [to],
             subject: subject,
             html: html,

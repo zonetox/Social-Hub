@@ -88,9 +88,12 @@ export default function AdminPaymentsPage() {
         setFilteredTransactions(filtered)
     }
 
-    const handleApprove = async (transactionId: string) => {
-        if (!confirm('Approve this payment?')) return
+    const [isProcessing, setIsProcessing] = useState<string | null>(null)
+    const [rejectionReason, setRejectionReason] = useState('')
+    const [showConfirmApprove, setShowConfirmApprove] = useState<string | null>(null)
 
+    const handleApprove = async (transactionId: string) => {
+        setIsProcessing(transactionId)
         try {
             const transaction = transactions.find(t => t.id === transactionId)
             if (!transaction) return
@@ -126,7 +129,8 @@ export default function AdminPaymentsPage() {
                         status: 'active',
                         starts_at: now.toISOString(),
                         expires_at: expiresAt.toISOString(),
-                        payment_method: transaction.payment_method
+                        payment_method: transaction.payment_method,
+                        payment_provider: transaction.payment_provider
                     })
 
                     // Give verification badge
@@ -144,22 +148,29 @@ export default function AdminPaymentsPage() {
 
             toast.success('Payment approved successfully!')
             fetchTransactions()
+            setShowConfirmApprove(null)
+            setSelectedTransaction(null)
         } catch (error) {
             console.error('Approve error:', error)
             toast.error('Failed to approve payment')
+        } finally {
+            setIsProcessing(null)
         }
     }
 
     const handleReject = async (transactionId: string) => {
-        const reason = prompt('Reason for rejection:')
-        if (!reason) return
+        if (!rejectionReason) {
+            toast.error('Please provide a reason for rejection')
+            return
+        }
 
+        setIsProcessing(transactionId)
         try {
             const { error } = await (supabase
                 .from('payment_transactions') as any)
                 .update({
                     status: 'failed',
-                    notes: reason,
+                    notes: rejectionReason,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', transactionId)
@@ -167,10 +178,14 @@ export default function AdminPaymentsPage() {
             if (error) throw error
 
             toast.success('Payment rejected')
+            setRejectionReason('')
             fetchTransactions()
+            setSelectedTransaction(null)
         } catch (error) {
             console.error('Reject error:', error)
             toast.error('Failed to reject payment')
+        } finally {
+            setIsProcessing(null)
         }
     }
 
@@ -355,16 +370,18 @@ export default function AdminPaymentsPage() {
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
-                                                        onClick={() => handleApprove(transaction.id)}
+                                                        onClick={() => setShowConfirmApprove(transaction.id)}
                                                         className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                                                        disabled={!!isProcessing}
                                                     >
                                                         <Check className="w-4 h-4" />
                                                     </Button>
                                                     <Button
                                                         size="sm"
                                                         variant="ghost"
-                                                        onClick={() => handleReject(transaction.id)}
+                                                        onClick={() => setSelectedTransaction(transaction)}
                                                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        disabled={!!isProcessing}
                                                     >
                                                         <X className="w-4 h-4" />
                                                     </Button>
@@ -504,26 +521,71 @@ export default function AdminPaymentsPage() {
                                 </div>
 
                                 {selectedTransaction.status === 'pending' && (
-                                    <div className="flex gap-4 pt-4 mt-6 border-t border-gray-100">
-                                        <Button
-                                            onClick={() => handleApprove(selectedTransaction.id)}
-                                            className="flex-1 py-6 text-lg"
-                                            variant="primary"
-                                        >
-                                            <Check className="w-5 h-5" />
-                                            Approve Payment
-                                        </Button>
-                                        <Button
-                                            onClick={() => handleReject(selectedTransaction.id)}
-                                            variant="danger"
-                                            className="flex-1 py-6 text-lg"
-                                        >
-                                            <X className="w-5 h-5" />
-                                            Reject Transaction
-                                        </Button>
+                                    <div className="pt-6 mt-6 border-t border-gray-100">
+                                        <div className="mb-4">
+                                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Process Decision</h3>
+                                            <textarea
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                placeholder="Add internal notes or rejection reason..."
+                                                rows={3}
+                                                value={rejectionReason}
+                                                onChange={(e) => setRejectionReason(e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <Button
+                                                onClick={() => handleApprove(selectedTransaction.id)}
+                                                className="flex-1 py-6 text-lg"
+                                                variant="primary"
+                                                isLoading={isProcessing === selectedTransaction.id}
+                                            >
+                                                <Check className="w-5 h-5" />
+                                                Approve Payment
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleReject(selectedTransaction.id)}
+                                                variant="danger"
+                                                className="flex-1 py-6 text-lg"
+                                                isLoading={isProcessing === selectedTransaction.id}
+                                            >
+                                                <X className="w-5 h-5" />
+                                                Reject Transaction
+                                            </Button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </Card>
+                </div>
+            )}
+            {/* Confirmation Modal */}
+            {showConfirmApprove && (
+                <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <Card className="max-w-md w-full animate-in fade-in zoom-in duration-200 p-8 text-center">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Check className="w-10 h-10 text-green-600" />
+                        </div>
+                        <h2 className="text-2xl font-black text-gray-900 mb-2">Confirm Approval</h2>
+                        <p className="text-gray-600 mb-8">
+                            Are you sure you want to approve this payment? This will activate the user's subscription or add credits immediately.
+                        </p>
+                        <div className="flex gap-4">
+                            <Button
+                                variant="outline"
+                                className="flex-1 py-4 font-bold"
+                                onClick={() => setShowConfirmApprove(null)}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                variant="primary"
+                                className="flex-1 py-4 font-bold premium-gradient border-none"
+                                onClick={() => handleApprove(showConfirmApprove)}
+                                isLoading={isProcessing === showConfirmApprove}
+                            >
+                                Confirm
+                            </Button>
                         </div>
                     </Card>
                 </div>

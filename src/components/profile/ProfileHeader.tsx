@@ -16,7 +16,10 @@ import {
     Link2,
     Globe,
     CheckCircle,
-    Share2
+    Share2,
+    Camera,
+    Image as ImageIcon,
+    Loader2
 } from 'lucide-react'
 import type { Profile } from '@/types/user.types'
 
@@ -38,7 +41,53 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
     })
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
+    const [isUploading, setIsUploading] = useState<'avatar' | 'banner' | null>(null)
     const supabase = createClient()
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        setIsUploading(type)
+        const bucket = type === 'avatar' ? 'avatars' : 'covers'
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${profile.user_id}/${Math.random()}.${fileExt}`
+
+        try {
+            // 1. Upload to Storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from(bucket)
+                .upload(fileName, file, { upsert: true })
+
+            if (uploadError) throw uploadError
+
+            // 2. Get Public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from(bucket)
+                .getPublicUrl(fileName)
+
+            // 3. Update Database
+            if (type === 'avatar') {
+                await supabase
+                    .from('users')
+                    .update({ avatar_url: publicUrl } as any)
+                    .eq('id', profile.user_id)
+            } else {
+                await supabase
+                    .from('profiles')
+                    .update({ cover_image_url: publicUrl } as any)
+                    .eq('id', profile.id)
+            }
+
+            toast.success(`${type === 'avatar' ? 'Avatar' : 'Banner'} updated!`)
+            onUpdate()
+        } catch (error: any) {
+            console.error('Upload error:', error)
+            toast.error(error.message || 'Failed to upload image')
+        } finally {
+            setIsUploading(null)
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -110,35 +159,73 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
         <>
             <Card>
                 {/* Cover Image */}
-                {profile.cover_image_url && (
-                    <div className="h-48 bg-gradient-to-r from-primary-400 to-secondary-400">
+                <div className="relative h-48 group">
+                    {profile.cover_image_url ? (
                         <img
                             src={profile.cover_image_url}
                             alt="Cover"
                             className="w-full h-full object-cover"
                         />
-                    </div>
-                )}
-                {!profile.cover_image_url && (
-                    <div className="h-48 bg-gradient-to-r from-primary-400 to-secondary-400" />
-                )}
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-r from-primary-400 to-secondary-400" />
+                    )}
+
+                    {/* Banner Upload Button */}
+                    <label className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                        <input
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => handleFileUpload(e, 'banner')}
+                            disabled={isUploading !== null}
+                        />
+                        <div className="flex flex-col items-center text-white">
+                            {isUploading === 'banner' ? (
+                                <Loader2 className="w-8 h-8 animate-spin" />
+                            ) : (
+                                <>
+                                    <ImageIcon className="w-8 h-8 mb-1" />
+                                    <span className="text-sm font-bold">Change Banner</span>
+                                </>
+                            )}
+                        </div>
+                    </label>
+                </div>
 
                 <div className="p-6">
                     <div className="flex items-start justify-between -mt-20 mb-4">
-                        <div className="flex items-end gap-4">
-                            {profile.user?.avatar_url ? (
-                                <img
-                                    src={profile.user.avatar_url}
-                                    alt={profile.display_name}
-                                    className="w-32 h-32 rounded-full border-4 border-white shadow-lg"
-                                />
-                            ) : (
-                                <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-primary-400 to-secondary-400 flex items-center justify-center">
-                                    <span className="text-4xl font-bold text-white">
-                                        {profile.display_name.charAt(0)}
-                                    </span>
-                                </div>
-                            )}
+                        <div className="flex items-end gap-4 relative group">
+                            <div className="relative">
+                                {profile.user?.avatar_url ? (
+                                    <img
+                                        src={profile.user.avatar_url}
+                                        alt={profile.display_name}
+                                        className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-32 h-32 rounded-full border-4 border-white shadow-lg bg-gradient-to-br from-primary-400 to-secondary-400 flex items-center justify-center">
+                                        <span className="text-4xl font-bold text-white">
+                                            {profile.display_name.charAt(0)}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Avatar Upload Button */}
+                                <label className="absolute inset-0 bg-black/30 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileUpload(e, 'avatar')}
+                                        disabled={isUploading !== null}
+                                    />
+                                    {isUploading === 'avatar' ? (
+                                        <Loader2 className="w-6 h-6 text-white animate-spin" />
+                                    ) : (
+                                        <Camera className="w-8 h-8 text-white" />
+                                    )}
+                                </label>
+                            </div>
                         </div>
 
                         <div className="flex gap-2 mt-20">
