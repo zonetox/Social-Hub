@@ -4,6 +4,10 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
+    if (!supabaseAdmin) {
+        return NextResponse.json({ error: 'Database service is temporarily unavailable' }, { status: 503 })
+    }
+
     const supabase = createServerClient()
     const { data: { session } } = await supabase.auth.getSession()
 
