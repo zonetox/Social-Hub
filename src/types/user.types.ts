@@ -23,6 +23,15 @@ export interface ThemeConfig {
     cardStyle?: 'glass' | 'solid' | 'outline'
 }
 
+export interface Category {
+    id: string
+    name: string
+    slug: string
+    icon?: string
+    display_order: number
+    created_at: string
+}
+
 export interface Profile {
     id: string
     user_id: string
@@ -32,6 +41,8 @@ export interface Profile {
     website?: string
     location?: string
     tags?: string[]
+    category_id?: string
+    category?: Category
     is_public: boolean
     view_count: number
     follower_count: number

@@ -189,6 +189,11 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
 
                     {/* Premium Badges Logic */}
                     <div className="flex flex-wrap gap-2">
+                        {profile.category && (
+                            <Badge variant="info" className="premium-gradient border-none text-[10px] py-1 font-black">
+                                {profile.category.name}
+                            </Badge>
+                        )}
                         {profile.follower_count >= 10 && (
                             <Badge variant="gold" className="animate-float">
                                 ★ Rising Star

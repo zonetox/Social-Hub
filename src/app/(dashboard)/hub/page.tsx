@@ -16,11 +16,16 @@ const RankingBoard = dynamicImport(() => import('@/components/dashboard/RankingB
     ssr: false
 })
 
+import { useSearchParams } from 'next/navigation'
+
 export default function HubPage() {
+    const searchParams = useSearchParams()
+    const initialQuery = searchParams.get('q') || ''
+
     const [profiles, setProfiles] = useState<Profile[]>([])
     const [filteredProfiles, setFilteredProfiles] = useState<Profile[]>([])
     const [loading, setLoading] = useState(true)
-    const [searchQuery, setSearchQuery] = useState('')
+    const [searchQuery, setSearchQuery] = useState(initialQuery)
     const supabase = createClient()
 
     useEffect(() => {

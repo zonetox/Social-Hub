@@ -21,7 +21,8 @@ import {
     Image as ImageIcon,
     Loader2
 } from 'lucide-react'
-import type { Profile } from '@/types/user.types'
+import type { Profile, Category } from '@/types/user.types'
+import { useEffect } from 'react'
 
 interface ProfileHeaderProps {
     profile: Profile
@@ -38,11 +39,24 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
         website: profile.website || '',
         location: profile.location || '',
         tags: profile.tags?.join(', ') || '',
+        category_id: profile.category_id || '',
     })
+    const [categories, setCategories] = useState<Category[]>([])
     const [errors, setErrors] = useState<Record<string, string>>({})
     const [isLoading, setIsLoading] = useState(false)
     const [isUploading, setIsUploading] = useState<'avatar' | 'banner' | null>(null)
     const supabase = createClient()
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            const { data } = await supabase
+                .from('profile_categories')
+                .select('*')
+                .order('display_order', { ascending: true })
+            if (data) setCategories(data)
+        }
+        fetchCategories()
+    }, [])
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'banner') => {
         const file = e.target.files?.[0]
@@ -125,6 +139,7 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
                     website: formData.website || null,
                     location: formData.location || null,
                     tags: tags.length > 0 ? tags : null,
+                    category_id: formData.category_id || null,
                 } as any)
                 .eq('id', profile.id)
 
@@ -371,6 +386,22 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
                         error={errors.location}
                         placeholder="City, Country"
                     />
+
+                    <div className="space-y-1">
+                        <label className="block text-sm font-medium text-gray-700">
+                            Category / Lĩnh vực
+                        </label>
+                        <select
+                            value={formData.category_id}
+                            onChange={(e) => setFormData(prev => ({ ...prev, category_id: e.target.value }))}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+                        >
+                            <option value="">Chọn lĩnh vực...</option>
+                            {categories.map(cat => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
 
                     <Input
                         label="Tags"

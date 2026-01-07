@@ -1,119 +1,168 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/Button'
-import { ArrowRight, Share2, BarChart, Shield, Sparkles } from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import { Logo } from '@/components/shared/Logo'
+import { Button } from '@/components/ui/Button'
+import { UserCard } from '@/components/dashboard/UserCard'
+import { HeroSearch } from '@/components/landing/HeroSearch'
+import { CategoryFilter } from '@/components/landing/CategoryFilter'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import type { Profile } from '@/types/user.types'
+import Link from 'next/link'
+import { Sparkles, ArrowRight, AppWindow, Users } from 'lucide-react'
 
 export default function LandingPage() {
+    const [profiles, setProfiles] = useState<Profile[]>([])
+    const [loading, setLoading] = useState(true)
+    const [activeCategory, setActiveCategory] = useState<string | null>(null)
+    const supabase = createClient()
+
+    useEffect(() => {
+        fetchProfiles()
+    }, [activeCategory])
+
+    const fetchProfiles = async () => {
+        setLoading(true)
+        try {
+            let query = supabase
+                .from('profiles')
+                .select(`
+                    id, 
+                    display_name, 
+                    slug, 
+                    cover_image_url, 
+                    follower_count, 
+                    view_count, 
+                    location, 
+                    tags,
+                    category:profile_categories(id, name, slug, icon),
+                    user:users(id, username, full_name, avatar_url, bio, is_verified),
+                    social_accounts(id, platform, platform_url, display_order, is_visible)
+                `)
+                .eq('is_public', true)
+                .order('follower_count', { ascending: false })
+
+            if (activeCategory) {
+                query = query.filter('category.slug', 'eq', activeCategory)
+            }
+
+            const { data, error } = await query.limit(12).returns<Profile[]>()
+
+            if (error) throw error
+            setProfiles(data || [])
+        } catch (error) {
+            console.error('Error fetching landing profiles:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     return (
-        <div className="min-h-screen">
-            {/* Navigation */}
-            <nav className="glass sticky top-0 z-50">
+        <div className="min-h-screen bg-[#F8FAFC]">
+            {/* Premium Navigation */}
+            <nav className="glass sticky top-0 z-50 border-b border-white/20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     <Logo size="md" />
                     <div className="flex items-center gap-4">
                         <Link href="/login" className="hidden sm:block">
-                            <Button variant="ghost" className="font-bold">Log in</Button>
+                            <Button variant="ghost" className="font-bold text-gray-600">Đăng nhập</Button>
                         </Link>
                         <Link href="/register">
-                            <Button className="premium-gradient border-none font-bold hover:scale-105 transition-transform">
-                                Get Started
+                            <Button className="premium-gradient border-none font-black shadow-xl shadow-primary-500/10 hover:scale-105 transition-transform px-8 h-12">
+                                Tham gia ngay
                             </Button>
                         </Link>
                     </div>
                 </div>
             </nav>
 
-            {/* Hero Section */}
-            <section className="pt-20 pb-32 relative overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary-500/10 blur-[120px] rounded-full -z-10" />
+            {/* Hero & Chat Search Section */}
+            <section className="relative pt-20 pb-16 overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[800px] bg-primary-500/5 blur-[150px] rounded-full -z-10 animate-pulse" />
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border-white/20 text-primary-600 text-sm font-bold mb-8 animate-float">
-                        <Sparkles className="w-4 h-4" />
-                        Next-Gen Digital Profiles
+                <div className="max-w-7xl mx-auto text-center px-4">
+                    <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full glass border-white/40 text-primary-600 text-sm font-black mb-8 animate-float shadow-xl shadow-primary-500/5">
+                        <Sparkles className="w-5 h-5" />
+                        DANH BẠ CARD VISIT THÔNG MINH
                     </div>
 
-                    <h1 className="text-6xl md:text-8xl font-black text-gray-900 mb-8 tracking-tighter leading-none">
-                        Connect Everything <br />
-                        <span className="text-transparent bg-clip-text premium-gradient">In One Link</span>
+                    <h1 className="text-5xl md:text-8xl font-black text-gray-900 mb-8 tracking-tighter leading-[0.9]">
+                        Kết Nối <span className="text-transparent bg-clip-text premium-gradient">Mọi Lĩnh Vực</span><br />
+                        Trong Tầm Tay
                     </h1>
 
-                    <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-                        Create a premium profile that reflects your unique identity.
-                        Join <span className="text-gray-900 font-bold">thousands</span> of creators growing their reach.
+                    <p className="text-lg md:text-2xl text-gray-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+                        Tìm kiếm đối tác, chuyên gia và dịch vụ thông qua hệ thống thẻ VISIT kỹ thuật số thế hệ mới.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-20">
-                        <Link href="/register">
-                            <Button size="lg" className="h-14 px-10 text-xl premium-gradient border-none font-black shadow-2xl shadow-primary-500/20 hover:scale-105 transition-transform group">
-                                Create your profile
-                                <ArrowRight className="w-6 h-6 ml-2 group-hover:translate-x-2 transition-transform" />
-                            </Button>
-                        </Link>
-                        <Link href="/hub">
-                            <Button variant="outline" size="lg" className="h-14 px-10 text-xl font-bold bg-white/50 backdrop-blur-md">
-                                Explore Hub
-                            </Button>
-                        </Link>
-                    </div>
-
-                    {/* Preview Dashboard */}
-                    <div className="relative mx-auto max-w-5xl animate-float" style={{ animationDelay: '1s' }}>
-                        <div className="absolute -inset-4 premium-gradient opacity-20 blur-3xl -z-10 rounded-[4rem]" />
-                        <div className="glass p-3 rounded-[2.5rem] shadow-2xl">
-                            <div className="aspect-[16/9] bg-white rounded-[2rem] overflow-hidden border border-white/20">
-                                <img
-                                    src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=2574&auto=format&fit=crop"
-                                    alt="Platform Preview"
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-white/20 to-transparent" />
-                            </div>
-                        </div>
-                    </div>
+                    <HeroSearch />
                 </div>
             </section>
 
-            {/* Features */}
-            <section className="py-32 relative">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                        {[
-                            {
-                                icon: Share2,
-                                title: 'Unified Link',
-                                description: 'Stop sharing multiple links. One link, one identity, total control.'
-                            },
-                            {
-                                icon: BarChart,
-                                title: 'Smart Insights',
-                                description: 'Real-time analytics to understand your audience behavior and growth.'
-                            },
-                            {
-                                icon: Shield,
-                                title: 'Verification',
-                                description: 'Build trust with a premium verification badge on your professional profile.'
-                            }
-                        ].map((feature, index) => (
-                            <div key={index} className="glass p-10 rounded-[2.5rem] hover:scale-105 transition-transform duration-500">
-                                <div className="w-16 h-16 premium-gradient rounded-2xl flex items-center justify-center mb-8 shadow-lg shadow-primary-500/20">
-                                    <feature.icon className="w-8 h-8 text-white" />
-                                </div>
-                                <h3 className="text-2xl font-black text-gray-900 mb-4 tracking-tight">{feature.title}</h3>
-                                <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
+            {/* Category Filter */}
+            <CategoryFilter
+                activeCategory={activeCategory}
+                onCategorySelect={setActiveCategory}
+            />
+
+            {/* Main Directory Grid */}
+            <section className="max-w-7xl mx-auto px-4 py-20">
+                <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
+                    <div>
+                        <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
+                            {activeCategory ? `Chuyên gia ${activeCategory}` : 'Tất cả chuyên gia'}
+                        </h2>
+                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
+                            <Users className="w-4 h-4" />
+                            {profiles.length} Card Visit đang hiển thị
+                        </p>
+                    </div>
+                    <Link href="/hub">
+                        <Button variant="outline" className="h-14 px-8 rounded-2xl border-gray-200 font-bold hover:bg-white hover:border-primary-500 transition-all">
+                            Xem tất cả danh bạ
+                            <ArrowRight className="w-5 h-5 ml-2" />
+                        </Button>
+                    </Link>
+                </div>
+
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-32 gap-6">
+                        <LoadingSpinner size="lg" />
+                        <p className="text-gray-400 font-bold animate-pulse">ĐANG TẢI DANH BẠ...</p>
+                    </div>
+                ) : profiles.length === 0 ? (
+                    <div className="glass p-20 rounded-[3rem] text-center border-dashed border-2 border-gray-200">
+                        <AppWindow className="w-16 h-16 text-gray-300 mx-auto mb-6" />
+                        <h3 className="text-2xl font-black text-gray-900 mb-2">Chưa có card visit nào</h3>
+                        <p className="text-gray-500 mb-8">Hãy là người đầu tiên tham gia lĩnh vực này!</p>
+                        <Link href="/register">
+                            <Button className="premium-gradient border-none px-10 h-14 font-black rounded-2xl">Bắt đầu ngay</Button>
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {profiles.map(profile => (
+                            <div key={profile.id} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                                <UserCard profile={profile} />
                             </div>
                         ))}
                     </div>
-                </div>
+                )}
             </section>
 
             {/* Footer */}
-            <footer className="py-16 glass mt-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-10">
-                    <Logo size="md" />
+            <footer className="py-20 glass mt-32 border-t border-white/20">
+                <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-12">
+                    <div className="space-y-4 text-center md:text-left">
+                        <Logo size="lg" />
+                        <p className="max-w-sm text-gray-500 font-medium">
+                            Nền tảng danh bạ card visit kỹ thuật số hàng đầu Việt Nam. Nâng tầm thương hiệu cá nhân của bạn.
+                        </p>
+                    </div>
                     <div className="flex flex-col items-center md:items-end gap-2">
-                        <p className="text-gray-900 font-bold">© 2024 Social HUB. All rights reserved.</p>
-                        <p className="text-sm text-gray-500 font-medium">Elevating digital presence with Glassmorphism.</p>
+                        <p className="text-gray-900 font-black tracking-tight text-xl">© 2024 Social HUB</p>
+                        <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">Premium Digital Identity Platform</p>
                     </div>
                 </div>
             </footer>
