@@ -12,21 +12,31 @@ export async function middleware(req: NextRequest) {
         data: { session },
     } = await supabase.auth.getSession()
 
+    const path = req.nextUrl.pathname
+
     // Protected routes
-    const protectedRoutes = ['/hub', '/profile', '/settings']
+    const protectedRoutes = ['/hub', '/profile', '/settings', '/contacts', '/analytics', '/cards', '/pricing', '/upgrade']
     const adminRoutes = ['/admin']
     const authRoutes = ['/login', '/register']
 
-    const path = req.nextUrl.pathname
-
     // Redirect authenticated users away from auth pages
     if (session && authRoutes.some(route => path.startsWith(route))) {
-        return NextResponse.redirect(new URL('/hub', req.url))
+        const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
+        // Copy cookies from original res to redirectRes
+        res.cookies.getAll().forEach(cookie => {
+            redirectRes.cookies.set(cookie.name, cookie.value)
+        })
+        return redirectRes
     }
 
     // Redirect unauthenticated users to login
     if (!session && protectedRoutes.some(route => path.startsWith(route))) {
-        return NextResponse.redirect(new URL('/login', req.url))
+        const redirectRes = NextResponse.redirect(new URL('/login', req.url))
+        // Ensure cookies are cleared/reset correctly on redirect
+        res.cookies.getAll().forEach(cookie => {
+            redirectRes.cookies.set(cookie.name, cookie.value)
+        })
+        return redirectRes
     }
 
     // Check admin access (only if on an admin route)
@@ -39,11 +49,18 @@ export async function middleware(req: NextRequest) {
                 .single() as any
 
             if (user?.role !== 'admin') {
-                return NextResponse.redirect(new URL('/hub', req.url))
+                const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
+                res.cookies.getAll().forEach(cookie => {
+                    redirectRes.cookies.set(cookie.name, cookie.value)
+                })
+                return redirectRes
             }
         } catch (error) {
-            // If check fails, default to safe redirect
-            return NextResponse.redirect(new URL('/hub', req.url))
+            const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
+            res.cookies.getAll().forEach(cookie => {
+                redirectRes.cookies.set(cookie.name, cookie.value)
+            })
+            return redirectRes
         }
     }
 

@@ -42,28 +42,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let mounted = true
 
+        // Try to get initial session immediately to avoid unnecessary loading(true)
+        const initAuth = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession()
+                if (session?.user) {
+                    setHasSession(true)
+                    const userData = await fetchUser(session.user.id)
+                    if (mounted) setUser(userData)
+                }
+            } catch (error) {
+                console.error('Initial session fetch error:', error)
+            } finally {
+                if (mounted) setLoading(false)
+            }
+        }
+
+        initAuth()
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                // Only set loading if it's not already loading and it's a sign-in event
-                // to avoid flickering on every state change if data is already there.
-                if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-                    // We stay in loading(true) which is the default
-                }
+                if (!mounted) return
 
-                try {
-                    if (session?.user) {
-                        setHasSession(true)
+                if (session?.user) {
+                    setHasSession(true)
+                    // Only fetch user if the user ID changed or we don't have it yet
+                    if (!user || user.id !== session.user.id) {
                         const userData = await fetchUser(session.user.id)
                         if (mounted) setUser(userData)
-                    } else {
-                        setHasSession(false)
-                        if (mounted) setUser(null)
                     }
-                } catch (error) {
-                    console.error('Auth state change error:', error)
-                } finally {
-                    if (mounted) setLoading(false)
+                } else {
+                    setHasSession(false)
+                    setUser(null)
                 }
+
+                // Always ensure loading is false after a state change
+                setLoading(false)
             }
         )
 
