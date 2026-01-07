@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@/types/user.types'
 
@@ -18,7 +18,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [hasSession, setHasSession] = useState(false)
     const [loading, setLoading] = useState(true)
+    const loadingRef = useRef(true)
     const supabase = createClient()
+
+    // Sync ref with state
+    useEffect(() => {
+        loadingRef.current = loading
+    }, [loading])
 
     const fetchUser = async (userId: string) => {
         try {
@@ -84,11 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // As a fallback, ensure loading is set to false after a timeout 
         // if anything goes wrong with Supabase's initial response
         const timeout = setTimeout(() => {
-            if (mounted && loading) {
+            if (mounted && loadingRef.current) {
                 console.warn('Auth initialization timed out, forcing loading to false')
                 setLoading(false)
             }
-        }, 5000)
+        }, 10000)
 
         return () => {
             mounted = false
