@@ -107,6 +107,7 @@ CREATE POLICY "Users can manage their own categories" ON public.contact_categori
 -- 8. Consolidate bank_transfer_info
 DROP POLICY IF EXISTS "Bank info is viewable by everyone" ON public.bank_transfer_info;
 DROP POLICY IF EXISTS "Admins can manage bank info" ON public.bank_transfer_info;
+DROP POLICY IF EXISTS "Admins manage bank info" ON public.bank_transfer_info;
 DROP POLICY IF EXISTS "Bank info view policy" ON public.bank_transfer_info;
 CREATE POLICY "Bank info view policy" ON public.bank_transfer_info FOR
 SELECT USING (is_active = TRUE);
