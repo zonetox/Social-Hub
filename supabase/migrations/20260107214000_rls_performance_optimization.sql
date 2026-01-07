@@ -1,5 +1,5 @@
 -- =============================================
--- RLS Performance Optimization
+-- RLS Performance Optimization - Fixed Version
 -- Fixes auth.uid() re-evaluation and multiple permissive policies
 -- =============================================
 -- 1. Fix auth.uid() re-evaluation in users table
@@ -7,6 +7,7 @@ DROP POLICY IF EXISTS "Users can insert their own record" ON public.users;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.users;
 DROP POLICY IF EXISTS "Users can view all active users" ON public.users;
 DROP POLICY IF EXISTS "Admins can do everything" ON public.users;
+DROP POLICY IF EXISTS "Admins can delete users" ON public.users;
 -- Recreate with optimized policies (combine where possible)
 CREATE POLICY "Users can view all active users" ON public.users FOR
 SELECT USING (
@@ -33,28 +34,29 @@ CREATE POLICY "Admins can delete users" ON public.users FOR DELETE USING (public
 -- 2. Fix multiple permissive policies on bank_transfer_info
 DROP POLICY IF EXISTS "Admins manage bank info" ON public.bank_transfer_info;
 DROP POLICY IF EXISTS "Bank info view policy" ON public.bank_transfer_info;
+DROP POLICY IF EXISTS "Bank info access policy" ON public.bank_transfer_info;
 -- Combine into single policy
 CREATE POLICY "Bank info access policy" ON public.bank_transfer_info FOR
-SELECT USING (
-        public.is_admin()
-        OR TRUE
-    );
--- Everyone can view, admins can manage
+SELECT USING (TRUE);
+-- Everyone can view
 CREATE POLICY "Admins manage bank info" ON public.bank_transfer_info FOR ALL USING (public.is_admin());
 -- 3. Fix multiple permissive policies on subscription_plans
 DROP POLICY IF EXISTS "Admins can manage plans" ON public.subscription_plans;
 DROP POLICY IF EXISTS "Plans are viewable by everyone" ON public.subscription_plans;
+DROP POLICY IF EXISTS "Subscription plans access" ON public.subscription_plans;
+DROP POLICY IF EXISTS "Admins manage subscription plans" ON public.subscription_plans;
 -- Combine into single policy
 CREATE POLICY "Subscription plans access" ON public.subscription_plans FOR
 SELECT USING (TRUE);
 -- Everyone can view
 CREATE POLICY "Admins manage subscription plans" ON public.subscription_plans FOR ALL USING (public.is_admin());
 -- 4. Optimize profiles policies with SELECT auth.uid()
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
 DROP POLICY IF EXISTS "Users can view own private profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can create own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can delete own profile" ON public.profiles;
-CREATE POLICY "Users can view own private profile" ON public.profiles FOR
+CREATE POLICY "Profiles are viewable" ON public.profiles FOR
 SELECT USING (
         is_public = TRUE
         OR user_id = (
@@ -122,7 +124,7 @@ CREATE POLICY "Users can unfollow" ON public.follows FOR DELETE USING (
 -- 7. Optimize analytics policies
 DROP POLICY IF EXISTS "Profile owners can view own analytics" ON public.analytics;
 DROP POLICY IF EXISTS "Admins can view all analytics" ON public.analytics;
-CREATE POLICY "Profile owners can view own analytics" ON public.analytics FOR
+CREATE POLICY "Analytics access policy" ON public.analytics FOR
 SELECT USING (
         EXISTS (
             SELECT 1
@@ -155,40 +157,40 @@ CREATE POLICY "Users can manage their own search history" ON public.search_histo
         SELECT auth.uid()
     ) = user_id
 );
--- 11. Optimize payment-related tables
-DROP POLICY IF EXISTS "Users can view own subscriptions" ON public.subscriptions;
-DROP POLICY IF EXISTS "Users can view own payments" ON public.payments;
-DROP POLICY IF EXISTS "Users can view own payment proofs" ON public.payment_proofs;
-CREATE POLICY "Users can view own subscriptions" ON public.subscriptions FOR
-SELECT USING (
-        (
-            SELECT auth.uid()
-        ) = user_id
-        OR public.is_admin()
-    );
-CREATE POLICY "Users can view own payments" ON public.payments FOR
-SELECT USING (
-        (
-            SELECT auth.uid()
-        ) = user_id
-        OR public.is_admin()
-    );
-CREATE POLICY "Users can view own payment proofs" ON public.payment_proofs FOR
-SELECT USING (
-        (
-            SELECT auth.uid()
-        ) = user_id
-        OR public.is_admin()
-    );
--- 12. Optimize card_sends policies
-DROP POLICY IF EXISTS "Users can view sent/received cards" ON public.card_sends;
-CREATE POLICY "Users can view sent/received cards" ON public.card_sends FOR
-SELECT USING (
-        (
-            SELECT auth.uid()
-        ) = sender_id
-        OR (
-            SELECT auth.uid()
-        ) = receiver_id
-        OR public.is_admin()
-    );
+-- 11. Optimize payment-related tables (COMMENTED OUT - tables don't exist yet)
+-- DROP POLICY IF EXISTS "Users can view own subscriptions" ON public.subscriptions;
+-- DROP POLICY IF EXISTS "Users can view own payments" ON public.payments;
+-- DROP POLICY IF EXISTS "Users can view own payment proofs" ON public.payment_proofs;
+-- CREATE POLICY "Users can view own subscriptions" ON public.subscriptions FOR
+-- SELECT USING (
+--         (
+--             SELECT auth.uid()
+--         ) = user_id
+--         OR public.is_admin()
+--     );
+-- CREATE POLICY "Users can view own payments" ON public.payments FOR
+-- SELECT USING (
+--         (
+--             SELECT auth.uid()
+--         ) = user_id
+--         OR public.is_admin()
+--     );
+-- CREATE POLICY "Users can view own payment proofs" ON public.payment_proofs FOR
+-- SELECT USING (
+--         (
+--             SELECT auth.uid()
+--         ) = user_id
+--         OR public.is_admin()
+--     );
+-- 12. Optimize card_sends policies (COMMENTED OUT - table doesn't exist yet)
+-- DROP POLICY IF EXISTS "Users can view sent/received cards" ON public.card_sends;
+-- CREATE POLICY "Users can view sent/received cards" ON public.card_sends FOR
+-- SELECT USING (
+--         (
+--             SELECT auth.uid()
+--         ) = sender_id
+--         OR (
+--             SELECT auth.uid()
+--         ) = receiver_id
+--         OR public.is_admin()
+--     );

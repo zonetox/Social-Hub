@@ -4,6 +4,8 @@
 -- Consolidation of "Public profiles are viewable by everyone" and "Users can view own private profile"
 DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
 DROP POLICY IF EXISTS "Users can view own private profile" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles are viewable by everyone if public or by owner" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles are viewable" ON public.profiles;
 CREATE POLICY "Profiles are viewable by everyone if public or by owner" ON public.profiles FOR
 SELECT USING (
         is_public = TRUE
@@ -35,6 +37,7 @@ CREATE POLICY "Users can delete own profile" ON public.profiles FOR DELETE USING
 -- 2. Optimize social_accounts
 DROP POLICY IF EXISTS "Social accounts visible if profile is public" ON public.social_accounts;
 DROP POLICY IF EXISTS "Users can manage own social accounts" ON public.social_accounts;
+DROP POLICY IF EXISTS "Social accounts access policy" ON public.social_accounts;
 CREATE POLICY "Social accounts access policy" ON public.social_accounts FOR ALL USING (
     EXISTS (
         SELECT 1

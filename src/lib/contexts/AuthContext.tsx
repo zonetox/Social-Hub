@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadingRef.current = loading
     }, [loading])
 
-    const fetchUser = async (userId: string) => {
+    const fetchUser = async (userId: string, retries = 3): Promise<User | null> => {
         try {
             const { data, error } = await supabase
                 .from('users')
@@ -35,7 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .single()
 
             if (error) {
-                console.warn('Error fetching user record (might be sync delay):', error)
+                console.warn(`Error fetching user record (attempt ${4 - retries}/3):`, error.message)
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 500))
+                    return fetchUser(userId, retries - 1)
+                }
                 return null
             }
             return data as User
@@ -48,13 +52,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let mounted = true
 
-        // Try to get initial session immediately to avoid unnecessary loading(true)
         const initAuth = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession()
                 if (session?.user) {
                     setHasSession(true)
                     const userData = await fetchUser(session.user.id)
+                    // If we have a session but CANNOT get the user from public.users, 
+                    // we still set hasSession to true (because they are authed),
+                    // but user is null. This triggers the "Profile Not Found" UI.
+                    // The retry logic above helps minimize false positives.
                     if (mounted) setUser(userData)
                 }
             } catch (error) {
@@ -72,17 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (session?.user) {
                     setHasSession(true)
-                    // Only fetch user if the user ID changed or we don't have it yet
-                    if (!user || user.id !== session.user.id) {
-                        const userData = await fetchUser(session.user.id)
-                        if (mounted) setUser(userData)
-                    }
+                    // Always try to fetch updated user data on auth change
+                    const userData = await fetchUser(session.user.id)
+                    if (mounted) setUser(userData)
                 } else {
                     setHasSession(false)
                     setUser(null)
                 }
 
-                // Always ensure loading is false after a state change
                 setLoading(false)
             }
         )

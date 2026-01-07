@@ -1,9 +1,11 @@
 -- =============================================
 -- PROFILE CATEGORIES
 -- =============================================
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. Create categories table
 CREATE TABLE IF NOT EXISTS public.profile_categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     slug TEXT NOT NULL UNIQUE,
     icon TEXT,
