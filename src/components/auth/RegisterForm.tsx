@@ -79,14 +79,35 @@ export function RegisterForm() {
             if (authError) throw authError
             if (!authData.user) throw new Error('Failed to create user')
 
-            // The user record and profile are now handled ATOMICALLY by 
-            // the Database Trigger on_auth_user_created in Supabase.
-            // This is safer and faster for thousands of users.
+            // Wait for database triggers to complete (auth.users -> public.users -> public.profiles)
+            // This prevents the "Profile not found" error
+            const maxRetries = 10
+            let retries = 0
+            let userCreated = false
 
+            while (retries < maxRetries && !userCreated) {
+                await new Promise(resolve => setTimeout(resolve, 500)) // Wait 500ms between checks
+
+                const { data: publicUser, error: checkError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('id', authData.user.id)
+                    .single()
+
+                if (publicUser && !checkError) {
+                    userCreated = true
+                } else {
+                    retries++
+                }
+            }
+
+            if (!userCreated) {
+                throw new Error('Account created but profile setup is taking longer than expected. Please try logging in.')
+            }
+
+            // User record confirmed, safe to redirect
             router.refresh()
-            setTimeout(() => {
-                router.push('/hub')
-            }, 100)
+            router.push('/hub')
         } catch (error: any) {
             console.error('Registration error:', error)
             setServerError(error.message || 'Failed to create account')
