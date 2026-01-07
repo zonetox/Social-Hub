@@ -27,11 +27,11 @@ export function HeroSearch() {
 
                 <form
                     onSubmit={handleSearch}
-                    className={`relative flex items-center gap-4 p-2 bg-white/80 backdrop-blur-2xl border-white/50 rounded-[2.5rem] shadow-2xl transition-all duration-500 ${isFocused ? 'ring-2 ring-primary-500/20 scale-[1.02]' : ''}`}
+                    className={`relative flex items-center gap-2 sm:gap-4 p-1.5 sm:p-2 bg-white/80 backdrop-blur-2xl border-white/50 rounded-2xl sm:rounded-[2.5rem] shadow-2xl transition-all duration-500 ${isFocused ? 'ring-2 ring-primary-500/20 scale-[1.02]' : ''}`}
                 >
-                    <div className="pl-6">
-                        <div className="w-10 h-10 rounded-full premium-gradient flex items-center justify-center shadow-lg shadow-primary-500/20">
-                            <Sparkles className="w-5 h-5 text-white animate-pulse" />
+                    <div className="pl-3 sm:pl-6 hidden xs:block">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full premium-gradient flex items-center justify-center shadow-lg shadow-primary-500/20">
+                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white animate-pulse" />
                         </div>
                     </div>
 
@@ -42,8 +42,8 @@ export function HeroSearch() {
                         onChange={(e) => setQuery(e.target.value)}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
-                        placeholder="Tìm kiếm chuyên gia, bác sĩ, kỹ sư... bằng ngôn ngữ tự nhiên"
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-lg md:text-xl font-medium text-gray-900 placeholder-gray-400 py-4"
+                        placeholder="Tìm kiếm chuyên gia..."
+                        className="flex-1 bg-transparent border-none focus:ring-0 text-sm sm:text-lg md:text-xl font-medium text-gray-900 placeholder-gray-400 py-3 sm:py-4 px-2"
                     />
 
                     <div className="flex items-center gap-2 pr-2">
@@ -59,17 +59,17 @@ export function HeroSearch() {
                         <Button
                             type="submit"
                             size="lg"
-                            className="h-14 px-8 rounded-full premium-gradient border-none font-black shadow-xl hover:scale-105 transition-transform group"
+                            className="h-10 sm:h-14 px-4 sm:px-8 rounded-xl sm:rounded-full premium-gradient border-none font-black shadow-xl hover:scale-105 transition-transform group text-xs sm:text-base"
                         >
-                            <span className="hidden sm:inline">Tìm kiếm ngay</span>
-                            <ArrowRight className="w-5 h-5 sm:ml-2 group-hover:translate-x-1 transition-transform" />
+                            <span className="hidden xs:inline sm:inline">Tìm kiếm</span>
+                            <ArrowRight className="w-4 h-4 sm:ml-2 group-hover:translate-x-1 transition-transform" />
                         </Button>
                     </div>
                 </form>
 
                 {/* Quick Shortcuts / Assistant Text */}
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
-                    <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Gợi ý:</p>
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+                    <p className="text-gray-500 text-[10px] sm:text-sm font-bold uppercase tracking-widest w-full sm:w-auto text-center mb-1 sm:mb-0">Gợi ý:</p>
                     {['Bác sĩ tư vấn', 'Kiến trúc sư', 'Chuyên gia Marketing', 'Freelancer IT'].map((item) => (
                         <button
                             key={item}
@@ -77,7 +77,7 @@ export function HeroSearch() {
                                 setQuery(item)
                                 inputRef.current?.focus()
                             }}
-                            className="px-4 py-2 rounded-full glass border-white/20 text-gray-600 text-sm font-bold hover:bg-white hover:text-primary-600 transition-all"
+                            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full glass border-white/20 text-gray-600 text-[10px] sm:text-sm font-bold hover:bg-white hover:text-primary-600 transition-all"
                         >
                             {item}
                         </button>

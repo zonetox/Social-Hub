@@ -62,14 +62,14 @@ export default function LandingPage() {
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Premium Navigation */}
             <nav className="glass sticky top-0 z-50 border-b border-white/20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-                    <Logo size="md" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+                    <Logo size="sm" />
                     <div className="flex items-center gap-4">
                         <Link href="/login" className="hidden sm:block">
                             <Button variant="ghost" className="font-bold text-gray-600">Đăng nhập</Button>
                         </Link>
                         <Link href="/register">
-                            <Button className="premium-gradient border-none font-black shadow-xl shadow-primary-500/10 hover:scale-105 transition-transform px-8 h-12">
+                            <Button className="premium-gradient border-none font-black shadow-xl shadow-primary-500/10 hover:scale-105 transition-transform px-4 sm:px-8 h-10 sm:h-12 text-sm sm:text-base">
                                 Tham gia ngay
                             </Button>
                         </Link>
@@ -82,17 +82,17 @@ export default function LandingPage() {
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[800px] bg-primary-500/5 blur-[150px] rounded-full -z-10 animate-pulse" />
 
                 <div className="max-w-7xl mx-auto text-center px-4">
-                    <div className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full glass border-white/40 text-primary-600 text-sm font-black mb-8 animate-float shadow-xl shadow-primary-500/5">
+                    <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full glass border-white/40 text-primary-600 text-[10px] sm:text-sm font-black mb-6 sm:mb-8 animate-float shadow-xl shadow-primary-500/5">
                         <Sparkles className="w-5 h-5" />
                         DANH BẠ CARD VISIT THÔNG MINH
                     </div>
 
-                    <h1 className="text-5xl md:text-8xl font-black text-gray-900 mb-8 tracking-tighter leading-[0.9]">
-                        Kết Nối <span className="text-transparent bg-clip-text premium-gradient">Mọi Lĩnh Vực</span><br />
+                    <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-gray-900 mb-6 sm:mb-8 tracking-tighter leading-[1.1] sm:leading-[0.9]">
+                        Kết Nối <span className="text-transparent bg-clip-text premium-gradient">Mọi Lĩnh Vực</span><br className="hidden sm:block" />
                         Trong Tầm Tay
                     </h1>
 
-                    <p className="text-lg md:text-2xl text-gray-500 mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
+                    <p className="text-base sm:text-lg md:text-2xl text-gray-500 mb-10 sm:mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
                         Tìm kiếm đối tác, chuyên gia và dịch vụ thông qua hệ thống thẻ VISIT kỹ thuật số thế hệ mới.
                     </p>
 
@@ -108,9 +108,9 @@ export default function LandingPage() {
 
             {/* Main Directory Grid */}
             <section className="max-w-7xl mx-auto px-4 py-20">
-                <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
+                <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 sm:mb-12 gap-6">
                     <div>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-2">
+                        <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight mb-2">
                             {activeCategory ? `Chuyên gia ${activeCategory}` : 'Tất cả chuyên gia'}
                         </h2>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
@@ -118,8 +118,8 @@ export default function LandingPage() {
                             {profiles.length} Card Visit đang hiển thị
                         </p>
                     </div>
-                    <Link href="/hub">
-                        <Button variant="outline" className="h-14 px-8 rounded-2xl border-gray-200 font-bold hover:bg-white hover:border-primary-500 transition-all">
+                    <Link href="/hub" className="w-full sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto h-12 sm:h-14 px-8 rounded-2xl border-gray-200 font-bold hover:bg-white hover:border-primary-500 transition-all text-sm sm:text-base">
                             Xem tất cả danh bạ
                             <ArrowRight className="w-5 h-5 ml-2" />
                         </Button>
@@ -141,7 +141,7 @@ export default function LandingPage() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
                         {profiles.map(profile => (
                             <div key={profile.id} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
                                 <UserCard profile={profile} />

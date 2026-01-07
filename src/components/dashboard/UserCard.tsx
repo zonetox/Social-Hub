@@ -239,11 +239,11 @@ export function UserCard({ profile, onFollowChange }: UserCardProps) {
                     </div>
                 )}
 
-                <div className="flex flex-col sm:flex-row gap-2 mt-6">
+                <div className="flex flex-col xs:flex-row gap-2 mt-6">
                     <Link href={`/${profile.slug}`} className="flex-1">
-                        <button className="w-full py-3.5 px-4 rounded-xl font-bold text-sm bg-gray-50 text-gray-900 border border-gray-100 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center gap-2 group/btn">
+                        <button className="w-full py-3 sm:py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm bg-gray-50 text-gray-900 border border-gray-100 hover:bg-gray-100 active:scale-95 transition-all flex items-center justify-center gap-2 group/btn">
                             View Profile
-                            <ExternalLink className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                            <ExternalLink className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform group-hover/btn:translate-x-1" />
                         </button>
                     </Link>
 
