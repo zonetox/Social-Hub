@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .from('users')
                 .select('*')
                 .eq('id', userId)
-                .single()
+                .maybeSingle()
 
             if (error) {
                 console.warn(`Error fetching user record (attempt ${4 - retries}/3):`, error.message)
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
                 return null
             }
-            return data as User
+            return (data as unknown as User) || null
         } catch (error) {
             console.error('Auth check failed:', error)
             return null
