@@ -42,9 +42,12 @@ export function Navbar() {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
 
-    const appNavigation = [
+    const mainNavigation = [
         { name: 'Hub', href: '/hub', icon: Home },
         { name: 'Contacts', href: '/contacts', icon: Users },
+    ]
+
+    const moreNavigation = [
         { name: 'My Cards', href: '/cards', icon: Inbox },
         { name: 'Pricing', href: '/pricing', icon: Sparkles },
     ]
@@ -68,19 +71,16 @@ export function Navbar() {
     const NavLink = ({ item, mobile = false }: { item: any; mobile?: boolean }) => {
         const Icon = item.icon
         const isActive = pathname === item.href
-        const isAdminLink = item.href.startsWith('/admin')
 
         return (
             <Link
                 href={item.href}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${isActive
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${isActive
                     ? 'bg-primary-50 text-primary-700 shadow-sm'
-                    : isAdminLink
-                        ? 'text-amber-700 hover:bg-amber-50 hover:text-amber-800'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     } ${mobile ? 'px-4 py-4 text-base' : ''}`}
             >
-                <Icon className={`w-4 h-4 ${isAdminLink && !isActive ? 'text-amber-600' : ''} ${mobile ? 'w-5 h-5' : ''}`} />
+                <Icon className={`w-4 h-4 ${mobile ? 'w-5 h-5' : ''}`} />
                 {item.name}
             </Link>
         )
@@ -90,66 +90,44 @@ export function Navbar() {
         <nav className="glass sticky top-0 z-40 border-t-0 border-x-0 rounded-none shadow-sm">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-20">
-                    {/* Logo & App Nav */}
-                    <div className="flex items-center gap-8">
+                    {/* Logo & Main Nav */}
+                    <div className="flex items-center gap-12">
                         <Logo size="sm" />
 
-                        <div className="hidden lg:flex items-center gap-1 border-l border-gray-200 pl-8">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 absolute -top-4">Application</span>
-                            {appNavigation.map((item) => (
+                        <div className="hidden md:flex items-center gap-1">
+                            {mainNavigation.map((item) => (
                                 <NavLink key={item.name} item={item} />
                             ))}
                         </div>
                     </div>
 
-                    {/* Right Side: Account, Admin, User Dropdown */}
-                    <div className="flex items-center gap-2 sm:gap-4">
-                        {/* Account Nav - Desktop */}
-                        <div className="hidden xl:flex items-center gap-1 border-r border-gray-200 pr-4 mr-2">
-                            {accountNavigation.map((item) => (
-                                <NavLink key={item.name} item={item} />
-                            ))}
-                        </div>
-
-                        {/* Admin Action Area */}
-                        {isAdmin && (
-                            <div className="hidden md:flex items-center gap-1 bg-amber-50/50 p-1 rounded-xl border border-amber-100 mr-2">
-                                {adminNavigation.map((item) => (
-                                    <NavLink key={item.name} item={item} />
-                                ))}
-                            </div>
-                        )}
-
+                    {/* Right Side: Search & User Dropdown */}
+                    <div className="flex items-center gap-3">
                         {/* Search */}
                         <button
                             onClick={() => setIsSearchOpen(true)}
-                            className="p-2 rounded-xl hover:bg-gray-100 transition-colors hidden sm:block group"
+                            className="p-2 rounded-xl hover:bg-gray-100 transition-colors group"
                             title="Tìm kiếm (Ctrl+K)"
                         >
-                            <Search className="w-5 h-5 text-gray-500 group-hover:text-primary-600" />
+                            <Search className="w-5 h-5 text-gray-400 group-hover:text-primary-600" />
                         </button>
 
                         {/* Profile Dropdown */}
                         <div className="relative">
                             <button
                                 onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                                className="flex items-center gap-3 p-1.5 pr-3 rounded-xl border border-gray-200 hover:border-primary-200 hover:bg-primary-50/30 transition-all bg-white"
+                                className="flex items-center p-1 rounded-xl border border-gray-100 hover:border-primary-200 hover:bg-primary-50/30 transition-all bg-white shadow-sm"
                             >
-                                <div className="w-8 h-8 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center shadow-sm">
-                                    <span className="text-sm font-black text-white">
+                                <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-lg flex items-center justify-center text-white shadow-sm">
+                                    <span className="text-sm font-black">
                                         {user?.full_name?.charAt(0) || 'U'}
                                     </span>
                                 </div>
-                                <div className="hidden md:flex flex-col items-start leading-tight">
-                                    <span className="text-xs font-bold text-gray-900 line-clamp-1">
-                                        {user?.full_name}
+                                <div className="hidden sm:flex items-center gap-1 ml-3 mr-2">
+                                    <span className="text-sm font-bold text-gray-700 max-w-[120px] truncate">
+                                        {user?.full_name?.split(' ')[0]}
                                     </span>
-                                    <div className="flex items-center gap-1">
-                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${isAdmin ? 'bg-amber-100 text-amber-700' : 'bg-primary-100 text-primary-700'
-                                            }`}>
-                                            {isAdmin ? 'Administrator' : 'Professional'}
-                                        </span>
-                                    </div>
+                                    <Menu className="w-3.5 h-3.5 text-gray-400" />
                                 </div>
                             </button>
 
@@ -160,57 +138,90 @@ export function Navbar() {
                                         className="fixed inset-0 z-40"
                                         onClick={() => setIsProfileMenuOpen(false)}
                                     />
-                                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in duration-200 origin-top-right">
-                                        <div className="px-4 py-3 border-b border-gray-50 mb-1">
+                                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden">
+                                        {/* User Info Header */}
+                                        <div className="px-5 py-4 bg-gray-50/50 border-b border-gray-100 -mt-3 mb-2">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-                                                    <User className="w-5 h-5 text-primary-600" />
+                                                <div className="w-12 h-12 bg-white rounded-xl border border-gray-200 flex items-center justify-center shadow-sm">
+                                                    <User className="w-6 h-6 text-primary-600" />
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-black text-gray-900">{user?.full_name}</p>
-                                                    <p className="text-[10px] text-gray-500 font-medium">{user?.email}</p>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-black text-gray-900 truncate">{user?.full_name}</p>
+                                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${isAdmin ? 'bg-amber-100 text-amber-700' : 'bg-primary-100 text-primary-700'
+                                                            }`}>
+                                                            {isAdmin ? 'Administrator' : 'Professional'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <div className="px-2 space-y-0.5">
-                                            {[...appNavigation, ...accountNavigation].map(item => (
-                                                <Link
-                                                    key={item.name}
-                                                    href={item.href}
-                                                    className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-primary-600 rounded-xl transition-colors"
-                                                    onClick={() => setIsProfileMenuOpen(false)}
-                                                >
-                                                    <item.icon className="w-4 h-4" />
-                                                    {item.name}
-                                                </Link>
-                                            ))}
+                                        <div className="px-2 space-y-4">
+                                            {/* App Section */}
+                                            <div>
+                                                <p className="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ứng dụng & Tool</p>
+                                                <div className="space-y-0.5">
+                                                    {moreNavigation.map(item => (
+                                                        <Link
+                                                            key={item.name}
+                                                            href={item.href}
+                                                            className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-primary-50 hover:text-primary-700 rounded-xl transition-colors"
+                                                            onClick={() => setIsProfileMenuOpen(false)}
+                                                        >
+                                                            <item.icon className="w-4 h-4" />
+                                                            {item.name}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Account Section */}
+                                            <div>
+                                                <p className="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Cá nhân & Cài đặt</p>
+                                                <div className="space-y-0.5">
+                                                    {accountNavigation.map(item => (
+                                                        <Link
+                                                            key={item.name}
+                                                            href={item.href}
+                                                            className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl transition-colors"
+                                                            onClick={() => setIsProfileMenuOpen(false)}
+                                                        >
+                                                            <item.icon className="w-4 h-4" />
+                                                            {item.name}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Admin Section */}
+                                            {isAdmin && (
+                                                <div className="pt-2 border-t border-gray-50">
+                                                    <p className="px-3 py-1 text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Quản trị hệ thống</p>
+                                                    <div className="space-y-0.5">
+                                                        {adminNavigation.map(item => (
+                                                            <Link
+                                                                key={item.name}
+                                                                href={item.href}
+                                                                className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 rounded-xl transition-colors"
+                                                                onClick={() => setIsProfileMenuOpen(false)}
+                                                            >
+                                                                <item.icon className="w-4 h-4 text-amber-600" />
+                                                                {item.name}
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {isAdmin && (
-                                            <div className="mt-2 pt-2 border-t border-gray-50 px-2 space-y-0.5">
-                                                <p className="px-3 py-1 text-[9px] font-black text-amber-600 uppercase tracking-widest">Admin Control</p>
-                                                {adminNavigation.map(item => (
-                                                    <Link
-                                                        key={item.name}
-                                                        href={item.href}
-                                                        className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 rounded-xl transition-colors"
-                                                        onClick={() => setIsProfileMenuOpen(false)}
-                                                    >
-                                                        <item.icon className="w-4 h-4 text-amber-600" />
-                                                        {item.name}
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        <div className="border-t border-gray-50 mt-2 pt-1 px-2">
+                                        <div className="border-t border-gray-100 mt-4 pt-2 px-2">
                                             <button
                                                 onClick={handleSignOut}
-                                                className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl w-full transition-colors"
+                                                className="flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-xl w-full transition-colors"
                                             >
                                                 <LogOut className="w-4 h-4" />
-                                                Kết thúc phiên làm việc
+                                                Đăng xuất hệ thống
                                             </button>
                                         </div>
                                     </div>
@@ -221,7 +232,7 @@ export function Navbar() {
                         {/* Mobile menu button */}
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="lg:hidden p-2 rounded-xl hover:bg-gray-100"
+                            className="md:hidden p-2 rounded-xl hover:bg-gray-100"
                         >
                             {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -230,10 +241,13 @@ export function Navbar() {
 
                 {/* Mobile Navigation Drawer */}
                 {isMenuOpen && (
-                    <div className="lg:hidden py-4 border-t border-gray-100 animate-in slide-in-from-top duration-300">
+                    <div className="md:hidden py-4 border-t border-gray-100 animate-in slide-in-from-top duration-300">
                         <div className="space-y-1">
-                            <p className="px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ứng dụng</p>
-                            {appNavigation.map((item) => (
+                            <p className="px-4 py-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">Truy cập nhanh</p>
+                            {mainNavigation.map((item) => (
+                                <NavLink key={item.name} item={item} mobile />
+                            ))}
+                            {moreNavigation.map((item) => (
                                 <NavLink key={item.name} item={item} mobile />
                             ))}
 
@@ -257,8 +271,7 @@ export function Navbar() {
 
             {/* Mobile Bottom Navigation - Visible only on small screens */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 py-3 z-50 flex justify-between items-center safe-area-inset-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                {[...appNavigation.slice(0, 3), ...accountNavigation.slice(0, 1), { name: 'Admin', href: '/admin', icon: Shield, hidden: !isAdmin }].map((item: any) => {
-                    if (item.hidden) return null
+                {[...mainNavigation, ...moreNavigation.slice(0, 1), { name: 'Me', href: '/profile', icon: User }].map((item: any) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href
                     return (
