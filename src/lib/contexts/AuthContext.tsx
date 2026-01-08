@@ -26,8 +26,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadingRef.current = loading
     }, [loading])
 
-    const fetchUser = async (userId: string, retries = 3): Promise<User | null> => {
+    const fetchUser = async (userId: string, retries = 2): Promise<User | null> => {
         try {
+            console.log(`[Auth] Fetching user ${userId} (retries remaining: ${retries})...`)
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
@@ -35,16 +36,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .maybeSingle()
 
             if (error) {
-                console.warn(`Error fetching user record (attempt ${4 - retries}/3):`, error.message)
+                console.warn(`[Auth] Error fetching user record (attempt ${3 - retries}/3):`, error.message)
                 if (retries > 0) {
-                    await new Promise(resolve => setTimeout(resolve, 500))
+                    await new Promise(resolve => setTimeout(resolve, 1000))
                     return fetchUser(userId, retries - 1)
                 }
                 return null
             }
+            if (!data) {
+                console.warn('[Auth] User record not found in public.users table.')
+            }
             return (data as unknown as User) || null
         } catch (error) {
-            console.error('Auth check failed:', error)
+            console.error('[Auth] Unexpected error during fetchUser:', error)
             return null
         }
     }
@@ -54,20 +58,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const initAuth = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession()
+                console.log('[Auth] Initializing authentication...')
+                const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+                if (sessionError) {
+                    console.error('[Auth] Session error:', sessionError.message)
+                    throw sessionError
+                }
+
                 if (session?.user) {
                     setHasSession(true)
+                    console.log('[Auth] Session found, fetching public user data...')
                     const userData = await fetchUser(session.user.id)
-                    // If we have a session but CANNOT get the user from public.users, 
-                    // we still set hasSession to true (because they are authed),
-                    // but user is null. This triggers the "Profile Not Found" UI.
-                    // The retry logic above helps minimize false positives.
                     if (mounted) setUser(userData)
+                } else {
+                    console.log('[Auth] No active session found.')
                 }
             } catch (error) {
-                console.error('Initial session fetch error:', error)
+                console.error('[Auth] Initialization failed:', error)
             } finally {
-                if (mounted) setLoading(false)
+                if (mounted) {
+                    console.log('[Auth] Initialization complete.')
+                    setLoading(false)
+                }
             }
         }
 
@@ -76,10 +89,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
                 if (!mounted) return
+                console.log(`[Auth] Auth state changed: ${event}`)
 
                 if (session?.user) {
                     setHasSession(true)
-                    // Always try to fetch updated user data on auth change
                     const userData = await fetchUser(session.user.id)
                     if (mounted) setUser(userData)
                 } else {
@@ -92,13 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         )
 
         // As a fallback, ensure loading is set to false after a timeout 
-        // if anything goes wrong with Supabase's initial response
+        // INCREASED to 20s for slow connections
         const timeout = setTimeout(() => {
             if (mounted && loadingRef.current) {
-                console.warn('Auth initialization timed out, forcing loading to false')
+                console.warn('[Auth] Initialization timed out after 20s, forcing loading to false')
                 setLoading(false)
             }
-        }, 10000)
+        }, 20000)
 
         return () => {
             mounted = false
