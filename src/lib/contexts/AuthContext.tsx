@@ -26,9 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loadingRef.current = loading
     }, [loading])
 
-    const fetchUser = async (userId: string, retries = 2): Promise<User | null> => {
+    const fetchUser = async (userId: string, authUserEmail?: string, retries = 1): Promise<User | null> => {
         try {
-            console.log(`[Auth] Fetching user ${userId} (retries remaining: ${retries})...`)
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
@@ -36,17 +35,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .maybeSingle()
 
             if (error) {
-                console.warn(`[Auth] Error fetching user record (attempt ${3 - retries}/3):`, error.message)
+                console.warn(`[Auth] Error fetching user record:`, error.message)
                 if (retries > 0) {
                     await new Promise(resolve => setTimeout(resolve, 1000))
-                    return fetchUser(userId, retries - 1)
+                    return fetchUser(userId, authUserEmail, retries - 1)
                 }
-                return null
             }
-            if (!data) {
-                console.warn('[Auth] User record not found in public.users table.')
+
+            if (data) return data as unknown as User
+
+            // STANDARD FALLBACK: If public record is missing, return a virtual user
+            // This prevents the UI from blocking or crashing.
+            if (authUserEmail) {
+                console.log('[Auth] Creating virtual user for:', authUserEmail)
+                return {
+                    id: userId,
+                    email: authUserEmail,
+                    full_name: authUserEmail.split('@')[0],
+                    username: authUserEmail.split('@')[0] + '-' + userId.substring(0, 4),
+                    role: 'user',
+                    is_active: true
+                } as User
             }
-            return (data as unknown as User) || null
+
+            return null
         } catch (error) {
             console.error('[Auth] Unexpected error during fetchUser:', error)
             return null
@@ -69,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (session?.user) {
                     setHasSession(true)
                     console.log('[Auth] Session found, fetching public user data...')
-                    const userData = await fetchUser(session.user.id)
+                    const userData = await fetchUser(session.user.id, session.user.email)
                     if (mounted) setUser(userData)
                 } else {
                     console.log('[Auth] No active session found.')
@@ -93,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
                 if (session?.user) {
                     setHasSession(true)
-                    const userData = await fetchUser(session.user.id)
+                    const userData = await fetchUser(session.user.id, session.user.email)
                     if (mounted) setUser(userData)
                 } else {
                     setHasSession(false)
