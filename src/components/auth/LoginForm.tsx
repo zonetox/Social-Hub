@@ -54,8 +54,12 @@ export function LoginForm() {
                 .eq('id', data.user.id)
                 .single() as any
 
-            if (!userData?.is_active) {
-                throw new Error('Your account has been deactivated')
+            if (!userData) {
+                throw new Error('Hồ sơ chưa được đồng bộ. Vui lòng thử lại sau vài giây hoặc liên hệ quản trị viên.')
+            }
+
+            if (!userData.is_active) {
+                throw new Error('Tài khoản của bạn đã bị vô hiệu hóa.')
             }
 
             router.refresh()
