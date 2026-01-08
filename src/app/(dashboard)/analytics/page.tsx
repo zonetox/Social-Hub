@@ -41,7 +41,7 @@ export default function AnalyticsPage() {
                 .from('profiles')
                 .select('*')
                 .eq('user_id', user.id)
-                .single() as any
+                .maybeSingle() as any
 
             if (!profile) return
 

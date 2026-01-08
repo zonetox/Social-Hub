@@ -34,7 +34,7 @@ export function useSubscription() {
                 .eq('status', 'active')
                 .order('expires_at', { ascending: false })
                 .limit(1)
-                .single()
+                .maybeSingle()
 
             if (data) {
                 setSubscription(data as unknown as UserSubscription)

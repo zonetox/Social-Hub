@@ -26,12 +26,12 @@ export function useProfile(userId?: string) {
             social_accounts(*)
           `)
                     .eq('user_id', userId)
-                    .single() as any
+                    .maybeSingle() as any
 
                 if (error) throw error
 
                 // Sort social accounts by display_order
-                if (data.social_accounts) {
+                if (data?.social_accounts) {
                     data.social_accounts.sort((a: SocialAccount, b: SocialAccount) =>
                         a.display_order - b.display_order
                     )
@@ -60,7 +60,7 @@ export function useProfile(userId?: string) {
         social_accounts(*)
       `)
             .eq('user_id', userId)
-            .single() as any
+            .maybeSingle() as any
 
         if (data?.social_accounts) {
             data.social_accounts.sort((a: SocialAccount, b: SocialAccount) =>

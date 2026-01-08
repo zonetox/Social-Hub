@@ -46,7 +46,7 @@ export async function middleware(req: NextRequest) {
                 .from('users')
                 .select('role')
                 .eq('id', session.user.id)
-                .single() as any
+                .maybeSingle() as any
 
             if (user?.role !== 'admin') {
                 const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
