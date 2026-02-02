@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { Search, ExternalLink, Zap } from 'lucide-react'
+import { Search, ExternalLink, Zap, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import clsx from 'clsx'
@@ -21,16 +21,13 @@ export default function MyOffersPage() {
 
     const [offers, setOffers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [quota, setQuota] = useState({ used: 0, limit: 0 })
+    const [quota, setQuota] = useState({ used: 0, limit: 0, credits: 0 })
 
     useEffect(() => {
         const fetchData = async () => {
             if (!user) return
 
             // 1. Fetch Offers Summary
-            // Need to join profile to filter by user.id ? 
-            // View definition: `SELECT ..., so.profile_id ... FROM ...`
-            // We need to find MY profiles first.
             const { data: myProfiles } = await supabase.from('profiles').select('id').eq('user_id', user.id)
             const myProfileIds = myProfiles?.map(p => p.id) || []
 
@@ -44,11 +41,11 @@ export default function MyOffersPage() {
                 if (data) setOffers(data)
             }
 
-            // 2. Calculate Quota
+            // 2. Calculate Quota & Credits
             const now = new Date()
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-            // Count offers (from all my profiles)
+            // Count offers
             let usedCount = 0
             if (myProfileIds.length > 0) {
                 const { count } = await supabase
@@ -73,7 +70,16 @@ export default function MyOffersPage() {
                 limitCount = (sub.plan.features as any).offer_quota_per_month || 0
             }
 
-            setQuota({ used: usedCount, limit: limitCount })
+            // Get Credits
+            const { data: creditData } = await supabase
+                .from('card_credits')
+                .select('amount')
+                .eq('user_id', user.id)
+                .single()
+
+            const credits = creditData?.amount || 0
+
+            setQuota({ used: usedCount, limit: limitCount, credits })
             setLoading(false)
         }
 
@@ -93,34 +99,60 @@ export default function MyOffersPage() {
                 </div>
 
                 {/* Quota Widget */}
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm w-full md:w-80">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm w-full md:w-96 space-y-3">
+                    {/* Main Quota */}
+                    <div>
+                        <div className="flex justify-between items-center mb-2">
+                            <span className="text-xs font-bold text-gray-600 uppercase flex items-center gap-1">
+                                <Zap className="w-3 h-3 text-amber-500 fill-current" />
+                                Quota tháng này
+                            </span>
+                            <span className="text-xs font-bold text-gray-900">
+                                {quota.used} / {quota.limit}
+                            </span>
+                        </div>
+                        <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div
+                                className={clsx(
+                                    "h-full rounded-full transition-all duration-500",
+                                    usagePercent > 90 ? "bg-red-500" : "premium-gradient"
+                                )}
+                                style={{ width: `${usagePercent}%` }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Credits Row */}
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                         <span className="text-xs font-bold text-gray-600 uppercase flex items-center gap-1">
-                            <Zap className="w-3 h-3 text-amber-500 fill-current" />
-                            Quota tháng này
+                            <PlusCircle className="w-3 h-3 text-green-500" />
+                            Credit mua thêm
                         </span>
-                        <span className="text-xs font-bold text-gray-900">
-                            {quota.used} / {quota.limit}
-                        </span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-sm font-black text-gray-900">{quota.credits}</span>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] px-2 border-primary-100 text-primary-600 hover:bg-primary-50"
+                                onClick={() => router.push('/pricing')}
+                            >
+                                Mua thêm
+                            </Button>
+                        </div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                        <div
-                            className={clsx(
-                                "h-full rounded-full transition-all duration-500",
-                                usagePercent > 90 ? "bg-red-500" : "premium-gradient"
-                            )}
-                            style={{ width: `${usagePercent}%` }}
-                        />
-                    </div>
-                    {usagePercent >= 100 && (
-                        <Button
-                            size="sm"
-                            variant="ghost"
-                            className="w-full mt-2 text-xs text-primary-600 hover:bg-primary-50 h-7"
-                            onClick={() => router.push('/pricing')}
-                        >
-                            Nâng cấp để gửi thêm
-                        </Button>
+
+                    {/* Upgrade Warning */}
+                    {usagePercent >= 100 && quota.credits === 0 && (
+                        <div className="pt-2">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="w-full text-xs text-red-500 bg-red-50 hover:bg-red-100 h-8"
+                                onClick={() => router.push('/pricing')}
+                            >
+                                Hết lượt! Nâng cấp ngay
+                            </Button>
+                        </div>
                     )}
                 </div>
             </div>

@@ -6,9 +6,11 @@ import { createClient } from '@/utils/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { ArrowLeft, Send, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Send } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { checkAndConsumeQuota, checkAndSendQuotaWarning } from '@/actions/quota'
+import { QuotaUpsellModal } from '@/components/ui/QuotaUpsellModal'
 
 export default function CreateRequestPage() {
     const { user } = useAuth()
@@ -16,8 +18,8 @@ export default function CreateRequestPage() {
     const supabase = createClient()
 
     const [categories, setCategories] = useState<any[]>([])
-    const [loading, setLoading] = useState(false)
     const [submitting, setSubmitting] = useState(false)
+    const [quotaState, setQuotaState] = useState({ isOpen: false, quota: 0, used: 0 })
 
     const [formData, setFormData] = useState({
         title: '',
@@ -37,62 +39,6 @@ export default function CreateRequestPage() {
         fetchCategories()
     }, [])
 
-    const checkQuota = async () => {
-        if (!user) return false
-
-        // 1. Get current month start
-        const now = new Date()
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-
-        // 2. Count existing requests this month
-        const { count, error: countError } = await supabase
-            .from('service_requests')
-            .select('*', { count: 'exact', head: true })
-            .eq('created_by_user_id', user.id)
-            .gte('created_at', startOfMonth)
-
-        if (countError) {
-            console.error('Error counting requests', countError)
-            return false // Fail safe
-        }
-
-        // 3. Get User Subscription & Plan Features
-        const { data: subscription, error: subError } = await supabase
-            .from('user_subscriptions')
-            .select(`
-                *,
-                plan:subscription_plans(features)
-            `)
-            .eq('user_id', user.id)
-            .eq('status', 'active')
-            .gte('expires_at', new Date().toISOString())
-            .single()
-
-        // Default quota if no subscription (or free tier if logic dictates)
-        // Assuming "STANDARD" (Free) has 5. 
-        // If no active sub found, they might be on a basic/default tier?
-        // Let's assume strict: Must have sub? Or use fallback?
-        // Existing feature uses `user_subscriptions`. If no sub, maybe 0 quota?
-
-        let quota = 0
-        if (subscription && subscription.plan && subscription.plan.features) {
-            const features = subscription.plan.features as any
-            quota = features.request_quota_per_month || 0
-        } else {
-            // Check for a default plan or assume 0?
-            // "Standard" plan usually has price 0. Users should be subscribed to it?
-            // If they are not subscribed, they probably can't post.
-            // Let's assume 0.
-            // Wait, the user prompt says: "Compare with: subscription_plans.features...".
-        }
-
-        if ((count || 0) >= quota) {
-            return false // Quota exceeded
-        }
-
-        return true
-    }
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!user) return
@@ -100,18 +46,22 @@ export default function CreateRequestPage() {
         setSubmitting(true)
 
         try {
-            // 1. Check Quota
-            const hasQuota = await checkQuota()
-            if (!hasQuota) {
-                toast.error('Bạn đã hết lượt tạo yêu cầu trong tháng này. Hãy nâng cấp gói!', {
-                    icon: '🔒',
-                    action: {
-                        label: 'Nâng cấp',
-                        onClick: () => router.push('/pricing')
-                    }
+            // 1. Check & Consume Quota (Subscription or Credit)
+            const quotaResult = await checkAndConsumeQuota('create_request', true)
+
+            if (!quotaResult.allowed) {
+                setQuotaState({
+                    isOpen: true,
+                    quota: quotaResult.quota,
+                    used: quotaResult.used
                 })
                 setSubmitting(false)
                 return
+            }
+
+            if (quotaResult.source === 'credit') {
+                toast.dismiss() // Dismiss loading/other toasts
+                toast.success(`Đã dùng 1 lượt mua thêm. Còn lại: ${quotaResult.creditsRemaining}`)
             }
 
             // 2. Insert Request
@@ -128,6 +78,10 @@ export default function CreateRequestPage() {
             if (error) throw error
 
             toast.success('Đã gửi yêu cầu thành công!')
+
+            // 3. Trigger 80% Warning (Async)
+            checkAndSendQuotaWarning('create_request').catch(console.error)
+
             router.push('/dashboard/requests')
 
         } catch (error) {
@@ -215,6 +169,14 @@ export default function CreateRequestPage() {
                     </div>
                 </form>
             </Card>
+
+            <QuotaUpsellModal
+                isOpen={quotaState.isOpen}
+                onClose={() => setQuotaState(prev => ({ ...prev, isOpen: false }))}
+                quota={quotaState.quota}
+                used={quotaState.used}
+                title="Hết lượt gửi yêu cầu"
+            />
         </div>
     )
 }
