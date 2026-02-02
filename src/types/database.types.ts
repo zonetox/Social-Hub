@@ -367,6 +367,89 @@ export interface Database {
         }
         Relationships: []
       }
+      service_offers: {
+        Row: {
+          id: string
+          request_id: string
+          profile_id: string
+          price: number | null
+          message: string
+          status: string
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          request_id: string
+          profile_id: string
+          price?: number | null
+          message: string
+          status?: string
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          request_id?: string
+          profile_id?: string
+          price?: number | null
+          message?: string
+          status?: string
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_offers_profile_id_fkey"
+            columns: ["profile_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_offers_request_id_fkey"
+            columns: ["request_id"]
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      service_requests: {
+        Row: {
+          id: string
+          created_by_user_id: string
+          category_id: string
+          title: string
+          description: string
+          status: string
+          created_at: string | null
+          closed_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_by_user_id: string
+          category_id: string
+          title: string
+          description: string
+          status?: string
+          created_at?: string | null
+          closed_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_by_user_id?: string
+          category_id?: string
+          title?: string
+          description?: string
+          status?: string
+          created_at?: string | null
+          closed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "profile_categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       social_accounts: {
         Row: {
           id: string
@@ -548,6 +631,53 @@ export interface Database {
           {
             foreignKeyName: "creator_cards_view_user_id_fkey"
             columns: ["user_id"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      my_offers_summary: {
+        Row: {
+          id: string
+          profile_id: string
+          price: number | null
+          offer_status: string
+          offered_at: string | null
+          message: string
+          request_id: string
+          request_title: string
+          request_status: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_offers_profile_id_fkey"
+            columns: ["profile_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_offers_request_id_fkey"
+            columns: ["request_id"]
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      my_requests_summary: {
+        Row: {
+          id: string
+          created_by_user_id: string
+          title: string
+          status: string
+          created_at: string | null
+          closed_at: string | null
+          category_name: string
+          offer_count: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_requests_created_by_user_id_fkey"
+            columns: ["created_by_user_id"]
             referencedRelation: "users"
             referencedColumns: ["id"]
           }
