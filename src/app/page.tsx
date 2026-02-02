@@ -26,31 +26,58 @@ export default function LandingPage() {
         setLoading(true)
         try {
             let query = supabase
-                .from('profiles')
-                .select(`
-                    id, 
-                    display_name, 
-                    slug, 
-                    cover_image_url, 
-                    follower_count, 
-                    view_count, 
-                    location, 
-                    tags,
-                    category:profile_categories(id, name, slug, icon),
-                    user:users(id, username, full_name, avatar_url, bio, is_verified),
-                    social_accounts(id, platform, platform_url, display_order, is_visible)
-                `)
-                .eq('is_public', true)
-                .order('follower_count', { ascending: false })
+                .from('creator_cards_view')
+                .select('*')
+                .order('priority_rank', { ascending: true })
+                .order('view_count', { ascending: false })
+                .order('created_at', { ascending: false })
 
             if (activeCategory) {
-                query = query.filter('category.slug', 'eq', activeCategory)
+                query = query.eq('category_slug', activeCategory)
             }
 
-            const { data, error } = await query.limit(12).returns<Profile[]>()
+            const { data, error } = await query.limit(12)
 
             if (error) throw error
-            setProfiles(data || [])
+
+            // Map flat view data to nested Profile structure
+            const mappedProfiles: Profile[] = (data || []).map((row: any) => ({
+                id: row.profile_id,
+                user_id: row.user_id,
+                display_name: row.display_name,
+                slug: row.slug,
+                cover_image_url: row.cover_image_url,
+                follower_count: row.follower_count,
+                view_count: row.view_count,
+                location: row.location,
+                tags: [], // Not in view, sending empty
+                is_public: true, // Implicit
+                created_at: row.created_at,
+                category: row.category_name ? {
+                    id: 'view_generated', // Placeholder
+                    name: row.category_name,
+                    slug: row.category_slug || '',
+                    icon: null
+                } : null,
+                user: {
+                    id: row.user_id,
+                    username: row.username,
+                    full_name: row.display_name, // Fallback
+                    avatar_url: row.avatar_url,
+                    bio: row.bio,
+                    is_verified: row.is_verified,
+                    role: 'user', // Default
+                    email: '', // Not exposed
+                    is_active: true
+                },
+                social_accounts: row.social_accounts || [],
+                // Extra properties for VIP
+                is_vip: row.is_vip,
+                priority_rank: row.priority_rank,
+                badge: row.badge
+            } as any))
+
+            setProfiles(mappedProfiles)
         } catch (error) {
             console.error('Error fetching landing profiles:', error)
         } finally {
@@ -132,18 +159,18 @@ export default function LandingPage() {
                         <p className="text-gray-400 font-bold animate-pulse">ĐANG TẢI DANH BẠ...</p>
                     </div>
                 ) : profiles.length === 0 ? (
-                    <div className="glass p-20 rounded-[3rem] text-center border-dashed border-2 border-gray-200">
-                        <AppWindow className="w-16 h-16 text-gray-300 mx-auto mb-6" />
-                        <h3 className="text-2xl font-black text-gray-900 mb-2">Chưa có card visit nào</h3>
-                        <p className="text-gray-500 mb-8">Hãy là người đầu tiên tham gia lĩnh vực này!</p>
+                    <div className="glass p-10 sm:p-20 rounded-[2rem] sm:rounded-[3rem] text-center border-dashed border-2 border-gray-200">
+                        <AppWindow className="w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-6" />
+                        <h3 className="text-xl sm:text-2xl font-black text-gray-900 mb-2">Chưa có card visit nào</h3>
+                        <p className="text-sm sm:text-base text-gray-500 mb-8">Hãy là người đầu tiên tham gia lĩnh vực này!</p>
                         <Link href="/register">
-                            <Button className="premium-gradient border-none px-10 h-14 font-black rounded-2xl">Bắt đầu ngay</Button>
+                            <Button className="premium-gradient border-none px-8 sm:px-10 h-12 sm:h-14 font-black rounded-2xl">Bắt đầu ngay</Button>
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6 md:gap-8">
                         {profiles.map(profile => (
-                            <div key={profile.id} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                            <div key={profile.id} className="animate-in fade-in slide-in-from-bottom-8 duration-700 h-full">
                                 <UserCard profile={profile} />
                             </div>
                         ))}

@@ -1,15 +1,15 @@
--- THE STANDARD AUTH SYNC - INDUSTRY BEST PRACTICE
--- This script resets the sync logic to be atomic, resilient, and simple.
+-- THE STANDARD AUTH SYNC - FINAL CLEAN VERSION
+-- This script ensures user and profile records are always created correctly.
 -- 1. CLEANUP OLD TRIGGERS
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
 -- 2. THE ATOMIC SYNC FUNCTION
--- Runs with SECURITY DEFINER to bypass RLS and ensure the record is ALWAYS created.
+-- SECURITY DEFINER ensures it runs with high privileges to bypass RLS.
 CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public,
     auth AS $$
 DECLARE final_username TEXT;
-BEGIN -- Standard Username Generation
+BEGIN -- Username base: lowcase email prefix + 4 chars from ID
 final_username := LOWER(
     REGEXP_REPLACE(
         SPLIT_PART(NEW.email, '@', 1),
@@ -18,7 +18,7 @@ final_username := LOWER(
         'g'
     )
 ) || '-' || SUBSTRING(NEW.id::text, 1, 4);
--- ATOMIC UPSERT: One operation for public.users
+-- Insert/Update public.users
 INSERT INTO public.users (id, email, username, full_name, role, is_active)
 VALUES (
         NEW.id,
@@ -40,7 +40,7 @@ SET email = EXCLUDED.email,
         WHEN public.users.full_name = public.users.email THEN EXCLUDED.full_name
         ELSE public.users.full_name
     END;
--- ATOMIC INSERT: Ensure profile exists
+-- Insert into public.profiles
 INSERT INTO public.profiles (user_id, display_name, slug, is_public)
 VALUES (
         NEW.id,
@@ -53,16 +53,14 @@ VALUES (
     ) ON CONFLICT (user_id) DO NOTHING;
 RETURN NEW;
 EXCEPTION
-WHEN OTHERS THEN -- Fallback: Just return NEW so the Auth user still gets created
-RETURN NEW;
+WHEN OTHERS THEN RETURN NEW;
 END;
 $$;
 -- 3. RE-INSTALL TRIGGER
 CREATE TRIGGER on_auth_user_created
 AFTER
 INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
--- 4. FORCE RE-SYNC EXISTING USERS
--- Ensure every Auth user has a corresponding Public user and Profile
+-- 4. SYNC EXISTING USERS
 INSERT INTO public.users (id, email, username, full_name, role, is_active)
 SELECT id,
     email,
@@ -83,7 +81,7 @@ SELECT id,
     full_name,
     username
 FROM public.users ON CONFLICT (user_id) DO NOTHING;
--- 5. SIMPLIFIED RLS (Standard Public Visibility)
+-- 5. RLS POLICIES (Standard Public)
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public users are viewable by everyone" ON public.users;
