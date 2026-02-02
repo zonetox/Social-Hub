@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { sendEmail } from '@/lib/email/resend'
 
@@ -43,10 +43,13 @@ export async function checkAndConsumeQuota(
         .gte('expires_at', new Date().toISOString())
         .single()
 
+    // Cast to any to avoid TS errors with joins not in types
+    const subData = subscription as any
+
     // 3. Determine Quota Limit
     let limit = 0
-    if (subscription?.plan?.features) {
-        const features = subscription.plan.features as any
+    if (subData?.plan?.features) {
+        const features = subData.plan.features as any
         if (actionType === 'create_request') {
             limit = features.request_quota_per_month || 0
         } else {
@@ -105,7 +108,7 @@ export async function checkAndConsumeQuota(
         if (creditsRemaining > 0) {
             if (consume) {
                 // Atomic Consume
-                const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit', {
+                const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit' as any, {
                     p_user_id: user.id
                 })
 
@@ -167,9 +170,12 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         .eq('status', 'active')
         .single()
 
-    if (!subscription?.plan?.features) return
+    // Cast to any
+    const subData = subscription as any
 
-    const features = subscription.plan.features as any
+    if (!subData?.plan?.features) return
+
+    const features = subData.plan.features as any
     let limit = 0
     if (actionType === 'create_request') limit = features.request_quota_per_month || 0
     else limit = features.offer_quota_per_month || 0
@@ -241,7 +247,7 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
     )
 
     // Log Event
-    await supabase.from('analytics').insert({
+    await (supabase.from('analytics') as any).insert({
         profile_id: profile.id,
         event_type: 'quota_warning_sent',
         metadata: { month: currentMonthStr, action: actionType },

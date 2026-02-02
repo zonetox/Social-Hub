@@ -6,3 +6,5 @@ import type { Database } from '@/types/database.types'
 export const createServerClient = () => {
     return createServerComponentClient<Database>({ cookies })
 }
+
+export const createClient = createServerClient

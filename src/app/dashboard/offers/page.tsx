@@ -1,18 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { Search, ExternalLink, Zap, PlusCircle } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
+import { toast } from 'react-hot-toast'
 import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
+import { getRecommendedRequests, RecommendedRequest } from '@/actions/recommendations'
+import { RecommendedRequests } from '@/components/dashboard/RecommendedRequests'
 
 export default function MyOffersPage() {
     const { user } = useAuth()
@@ -20,6 +22,7 @@ export default function MyOffersPage() {
     const router = useRouter()
 
     const [offers, setOffers] = useState<any[]>([])
+    const [recommendations, setRecommendations] = useState<RecommendedRequest[]>([])
     const [loading, setLoading] = useState(true)
     const [quota, setQuota] = useState({ used: 0, limit: 0, credits: 0 })
 
@@ -29,7 +32,7 @@ export default function MyOffersPage() {
 
             // 1. Fetch Offers Summary
             const { data: myProfiles } = await supabase.from('profiles').select('id').eq('user_id', user.id)
-            const myProfileIds = myProfiles?.map(p => p.id) || []
+            const myProfileIds = (myProfiles as any)?.map((p: any) => p.id) || []
 
             if (myProfileIds.length > 0) {
                 const { data, error } = await supabase
@@ -65,9 +68,10 @@ export default function MyOffersPage() {
                 .gte('expires_at', new Date().toISOString())
                 .single()
 
+            const subscription = sub as any
             let limitCount = 0
-            if (sub?.plan?.features) {
-                limitCount = (sub.plan.features as any).offer_quota_per_month || 0
+            if (subscription?.plan?.features) {
+                limitCount = subscription.plan.features.offer_quota_per_month || 0
             }
 
             // Get Credits
@@ -77,7 +81,16 @@ export default function MyOffersPage() {
                 .eq('user_id', user.id)
                 .single()
 
-            const credits = creditData?.amount || 0
+            const credits = (creditData as any)?.amount || 0
+
+            // 3. Fetch Recommendations if no offers or always? User said "Dashboard Home" and "Empty State"
+            // Let's fetch it always to show as a section, but emphasize on empty
+            try {
+                const recs = await getRecommendedRequests(5)
+                setRecommendations(recs)
+            } catch (err) {
+                console.error('Failed to load recommendations', err)
+            }
 
             setQuota({ used: usedCount, limit: limitCount, credits })
             setLoading(false)
@@ -158,59 +171,76 @@ export default function MyOffersPage() {
             </div>
 
             {offers.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 mb-4">Bạn chưa gửi báo giá nào trong tháng này.</p>
-                    <Link href="/requests">
-                        <Button>Tìm kiếm yêu cầu ngay</Button>
-                    </Link>
+                <div className="space-y-8">
+                    <div className="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                        <p className="text-gray-500 mb-4">Bạn chưa gửi báo giá nào trong tháng này.</p>
+                        {recommendations.length > 0 && (
+                            <p className="text-primary-600 font-medium mb-4">
+                                Có {recommendations.length} yêu cầu mới trong ngành của bạn – bắt đầu chào giá ngay!
+                            </p>
+                        )}
+                        <Link href="/requests">
+                            <Button>Tìm kiếm yêu cầu ngay</Button>
+                        </Link>
+                    </div>
+                    {recommendations.length > 0 && (
+                        <RecommendedRequests requests={recommendations} />
+                    )}
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Yêu cầu</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Trạng thái Yêu Cầu</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Giá chào</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Lời nhắn</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-center">Ngày gửi</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Chi tiết</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {offers.map(offer => (
-                                    <tr key={offer.id} className="hover:bg-gray-50/50 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <Link href={`/requests/${offer.request_id}`} className="font-bold text-gray-900 hover:text-primary-600 block max-w-xs truncate">
-                                                {offer.request_title}
-                                            </Link>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <Badge variant={offer.request_status === 'open' ? 'success' : 'secondary'} className="capitalize bg-gray-100 text-gray-600 border-none">
-                                                {offer.request_status === 'open' ? 'Đang mở' : 'Đã đóng'}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-6 py-4 font-mono text-sm text-gray-700">
-                                            {offer.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(offer.price) : 'Thương lượng'}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
-                                            {offer.message}
-                                        </td>
-                                        <td className="px-6 py-4 text-center text-sm text-gray-500">
-                                            {formatDistanceToNow(new Date(offer.offered_at), { addSuffix: true, locale: vi })}
-                                        </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <Link href={`/requests/${offer.request_id}`}>
-                                                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-primary-600">
-                                                    <ExternalLink className="w-4 h-4" />
-                                                </Button>
-                                            </Link>
-                                        </td>
+                <div className="space-y-8">
+                    {/* Recommendations Section for Active Users too */}
+                    {recommendations.length > 0 && (
+                        <RecommendedRequests requests={recommendations} className="mb-8" />
+                    )}
+
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Yêu cầu</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Trạng thái Yêu Cầu</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Giá chào</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase">Lời nhắn</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-center">Ngày gửi</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase text-right">Chi tiết</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {offers.map(offer => (
+                                        <tr key={offer.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <Link href={`/requests/${offer.request_id}`} className="font-bold text-gray-900 hover:text-primary-600 block max-w-xs truncate">
+                                                    {offer.request_title}
+                                                </Link>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <Badge variant={offer.request_status === 'open' ? 'success' : 'default'} className="capitalize bg-gray-100 text-gray-600 border-none">
+                                                    {offer.request_status === 'open' ? 'Đang mở' : 'Đã đóng'}
+                                                </Badge>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-sm text-gray-700">
+                                                {offer.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(offer.price) : 'Thương lượng'}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                                                {offer.message}
+                                            </td>
+                                            <td className="px-6 py-4 text-center text-sm text-gray-500">
+                                                {formatDistanceToNow(new Date(offer.offered_at), { addSuffix: true, locale: vi })}
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <Link href={`/requests/${offer.request_id}`}>
+                                                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-gray-500 hover:text-primary-600">
+                                                        <ExternalLink className="w-4 h-4" />
+                                                    </Button>
+                                                </Link>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             )}

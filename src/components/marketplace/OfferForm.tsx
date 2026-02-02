@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Send } from 'lucide-react'
-import { toast } from 'sonner'
+import { toast } from 'react-hot-toast'
 import { checkAndConsumeQuota, checkAndSendQuotaWarning } from '@/actions/quota'
 import { QuotaUpsellModal } from '@/components/ui/QuotaUpsellModal'
 
@@ -50,7 +50,7 @@ export function OfferForm({ requestId, onSuccess }: OfferFormProps) {
             }
 
             // 2. Get User Profile ID (assume first one)
-            const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', user.id).single()
+            const { data: profile } = await (supabase.from('profiles') as any).select('id').eq('user_id', user.id).single()
             if (!profile) {
                 toast.error('Bạn chưa có hồ sơ (Profile) để gửi báo giá.')
                 setSubmitting(false)
@@ -58,7 +58,7 @@ export function OfferForm({ requestId, onSuccess }: OfferFormProps) {
             }
 
             // 3. Insert Offer
-            const { error } = await supabase.from('service_offers').insert({
+            const { error } = await (supabase.from('service_offers') as any).insert({
                 request_id: requestId,
                 profile_id: profile.id,
                 message: formData.message,

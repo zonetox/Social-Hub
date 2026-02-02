@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/utils/supabase/client'
-import { useAuth } from '@/contexts/AuthContext'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { ArrowLeft, Send } from 'lucide-react'
 import Link from 'next/link'
-import { toast } from 'sonner'
+import { toast } from 'react-hot-toast'
 import { checkAndConsumeQuota, checkAndSendQuotaWarning } from '@/actions/quota'
 import { QuotaUpsellModal } from '@/components/ui/QuotaUpsellModal'
 
@@ -65,8 +65,8 @@ export default function CreateRequestPage() {
             }
 
             // 2. Insert Request
-            const { error } = await supabase
-                .from('service_requests')
+            const { data, error } = await (supabase
+                .from('service_requests') as any)
                 .insert({
                     created_by_user_id: user.id,
                     title: formData.title,
