@@ -4,6 +4,7 @@ import { cookies } from 'next/headers'
 import type { Database } from '@/types/database.types'
 
 export const createServerClient = () => {
+    // Returns typed client
     return createServerComponentClient<Database>({ cookies })
 }
 
