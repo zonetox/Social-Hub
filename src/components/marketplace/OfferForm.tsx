@@ -6,7 +6,6 @@ import { useAuth } from '@/lib/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Send } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { checkAndConsumeQuota, checkAndSendQuotaWarning } from '@/actions/quota'
 import { QuotaUpsellModal } from '@/components/ui/QuotaUpsellModal'
 
 interface OfferFormProps {
@@ -31,8 +30,14 @@ export function OfferForm({ requestId, onSuccess }: OfferFormProps) {
 
         setSubmitting(true)
         try {
-            // 1. Check & Consume Quota
-            const quotaResult = await checkAndConsumeQuota('create_offer', true)
+            // 1. Check & Consume Quota via API
+            const quotaRes = await fetch('/api/quota/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'create_offer', consume: true })
+            })
+
+            const quotaResult = await quotaRes.json()
 
             if (!quotaResult.allowed) {
                 setQuotaState({
@@ -76,8 +81,12 @@ export function OfferForm({ requestId, onSuccess }: OfferFormProps) {
                 toast.success('Gửi báo giá thành công!')
                 setFormData({ message: '', price: '' })
 
-                // 4. Trigger Warning (Async)
-                checkAndSendQuotaWarning('create_offer').catch(console.error)
+                // 4. Trigger Warning (Async) via API
+                fetch('/api/quota/warning', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'create_offer' })
+                }).catch(console.error)
 
                 onSuccess?.()
             }

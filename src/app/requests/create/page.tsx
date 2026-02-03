@@ -9,7 +9,6 @@ import { Card } from '@/components/ui/Card'
 import { ArrowLeft, Send } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'react-hot-toast'
-import { checkAndConsumeQuota, checkAndSendQuotaWarning } from '@/actions/quota'
 import { QuotaUpsellModal } from '@/components/ui/QuotaUpsellModal'
 
 export default function CreateRequestPage() {
@@ -46,8 +45,14 @@ export default function CreateRequestPage() {
         setSubmitting(true)
 
         try {
-            // 1. Check & Consume Quota (Subscription or Credit)
-            const quotaResult = await checkAndConsumeQuota('create_request', true)
+            // 1. Check & Consume Quota (Subscription or Credit) via API
+            const quotaRes = await fetch('/api/quota/check', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'create_request', consume: true })
+            })
+
+            const quotaResult = await quotaRes.json()
 
             if (!quotaResult.allowed) {
                 setQuotaState({
@@ -60,7 +65,7 @@ export default function CreateRequestPage() {
             }
 
             if (quotaResult.source === 'credit') {
-                toast.dismiss() // Dismiss loading/other toasts
+                toast.dismiss()
                 toast.success(`Đã dùng 1 lượt mua thêm. Còn lại: ${quotaResult.creditsRemaining}`)
             }
 
@@ -79,8 +84,12 @@ export default function CreateRequestPage() {
 
             toast.success('Đã gửi yêu cầu thành công!')
 
-            // 3. Trigger 80% Warning (Async)
-            checkAndSendQuotaWarning('create_request').catch(console.error)
+            // 3. Trigger 80% Warning (Async) via API
+            fetch('/api/quota/warning', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'create_request' })
+            }).catch(console.error)
 
             router.push('/dashboard/requests')
 

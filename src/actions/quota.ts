@@ -1,12 +1,14 @@
+'use server'
+
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email/resend'
 import type { Database } from '@/types/database'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { format } from 'date-fns'
 
-type QuotaAction = 'create_request' | 'create_offer'
+export type QuotaAction = 'create_request' | 'create_offer'
 
-interface QuotaResult {
+export interface QuotaResult {
     allowed: boolean
     reason?: 'quota_exceeded' | 'error' | 'no_subscription'
     source?: 'subscription' | 'credit'
@@ -16,20 +18,14 @@ interface QuotaResult {
 }
 
 /**
- * Checks quota and optionally consumes usage (or credit).
+ * INTERNAL: Core quota logic (Shared between Action and API)
  */
-export async function checkAndConsumeQuota(
+export async function checkAndConsumeQuotaInternal(
+    supabase: SupabaseClient<Database>,
+    userId: string,
     actionType: QuotaAction,
     consume: boolean = false
 ): Promise<QuotaResult> {
-    const supabase = createClient() as unknown as SupabaseClient<Database>
-
-    // 1. Get User
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-        return { allowed: false, reason: 'error', quota: 0, used: 0, creditsRemaining: 0 }
-    }
-
     // 2. Get Subscription & Plan (strictly typed join)
     const { data: subscription } = await supabase
         .from('user_subscriptions')
@@ -37,7 +33,7 @@ export async function checkAndConsumeQuota(
             *,
             plan:subscription_plans(features)
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('status', 'active')
         .gte('expires_at', new Date().toISOString())
         .maybeSingle()
@@ -45,7 +41,7 @@ export async function checkAndConsumeQuota(
     // 3. Determine Quota Limit
     let limit = 0
     if (subscription?.plan) {
-        const features = subscription.plan.features as any // features is Json, need some flexibility here or cast to known interface
+        const features = subscription.plan.features as any
         if (actionType === 'create_request') {
             limit = (features as any)?.request_quota_per_month || 0
         } else {
@@ -62,14 +58,14 @@ export async function checkAndConsumeQuota(
         const { count } = await supabase
             .from('service_requests')
             .select('*', { count: 'exact', head: true })
-            .eq('created_by_user_id', user.id)
+            .eq('created_by_user_id', userId)
             .gte('created_at', startOfMonth)
         used = count || 0
     } else {
         const { data: profiles } = await supabase
             .from('profiles')
             .select('id')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
 
         const profileIds = profiles?.map(p => p.id) || []
 
@@ -87,7 +83,7 @@ export async function checkAndConsumeQuota(
     const { data: creditData } = await supabase
         .from('card_credits')
         .select('amount')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle()
 
     const creditsRemaining = creditData?.amount || 0
@@ -105,7 +101,7 @@ export async function checkAndConsumeQuota(
         if (consume) {
             // Atomic Consume using RPC
             const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit', {
-                p_user_id: user.id
+                p_user_id: userId
             })
 
             if (rpcError || newAmount === null || typeof newAmount !== 'number') {
@@ -147,17 +143,33 @@ export async function checkAndConsumeQuota(
 }
 
 /**
- * Checks usage and sends warning email if >= 80%.
+ * Exported Server Action
  */
-export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
+export async function checkAndConsumeQuota(
+    actionType: QuotaAction,
+    consume: boolean = false
+): Promise<QuotaResult> {
     const supabase = createClient() as unknown as SupabaseClient<Database>
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+        return { allowed: false, reason: 'error', quota: 0, used: 0, creditsRemaining: 0 }
+    }
+    return checkAndConsumeQuotaInternal(supabase, user.id, actionType, consume)
+}
 
+/**
+ * INTERNAL: Core warning logic
+ */
+export async function checkAndSendQuotaWarningInternal(
+    supabase: SupabaseClient<Database>,
+    userId: string,
+    userEmail: string,
+    actionType: QuotaAction
+) {
     const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select(`*, plan:subscription_plans(features)`)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('status', 'active')
         .maybeSingle()
 
@@ -179,14 +191,14 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         const { count } = await supabase
             .from('service_requests')
             .select('*', { count: 'exact', head: true })
-            .eq('created_by_user_id', user.id)
+            .eq('created_by_user_id', userId)
             .gte('created_at', startOfMonth)
         used = count || 0
     } else {
         const { data: profiles } = await supabase
             .from('profiles')
             .select('id')
-            .eq('user_id', user.id)
+            .eq('user_id', userId)
 
         const profileIds = profiles?.map(p => p.id) || []
         if (profileIds.length > 0) {
@@ -206,7 +218,7 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
     const { data: profile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle()
 
     if (!profile) return
@@ -224,7 +236,7 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
     // Send Email
     const typeName = actionType === 'create_request' ? 'gửi yêu cầu' : 'gửi báo giá'
     await sendEmail({
-        to: user.email || '',
+        to: userEmail,
         subject: `Cảnh báo: Bạn sắp hết lượt ${typeName} tháng này`,
         html: `
             <h1>Bạn đã sử dụng ${used}/${limit} lượt ${typeName}</h1>
@@ -242,4 +254,14 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         event_type: 'quota_warning_sent',
         metadata: { month: currentMonthStr, action: actionType }
     })
+}
+
+/**
+ * Exported Server Action
+ */
+export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
+    const supabase = createClient() as unknown as SupabaseClient<Database>
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user || !user.email) return
+    return checkAndSendQuotaWarningInternal(supabase, user.id, user.email, actionType)
 }
