@@ -47,6 +47,8 @@ export async function initiateCreditPurchase(
     return { success: true, transactionId: data.id }
 }
 
+import { Database } from '@/types/database.types'
+
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
