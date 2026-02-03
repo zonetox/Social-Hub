@@ -21,7 +21,9 @@ export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise
         .eq('user_id', user.id)
         .single()
 
-    if (!profile || !profile.category_id) {
+    const userProfile = profile as any
+
+    if (!userProfile || !userProfile.category_id) {
         return { opportunities: 0, offersSent: 0, requestsClosed: 0 }
     }
 
@@ -34,14 +36,14 @@ export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise
     const { count: opportunities } = await supabase
         .from('service_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('category_id', profile.category_id)
+        .eq('category_id', userProfile.category_id)
         .gte('created_at', startDate)
 
     // 3. Count Offers Sent
     const { count: offersSent } = await supabase
         .from('service_offers')
         .select('*', { count: 'exact', head: true })
-        .eq('profile_id', profile.id)
+        .eq('profile_id', userProfile.id)
         .gte('created_at', startDate)
 
     // 4. Count Requests Closed (Engagement)
@@ -62,7 +64,7 @@ export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise
             request_id,
             request:service_requests!inner(status)
         `, { count: 'exact', head: true })
-        .eq('profile_id', profile.id)
+        .eq('profile_id', userProfile.id)
         .eq('request.status', 'closed') // Filter on joined table
         // Time range? "requests closed". Time of closure? Or time of offer?
         // Prompt SQL: `AND sr.status = 'closed'`. It didn't specify timestamp filter on SR. 
