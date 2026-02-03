@@ -23,7 +23,7 @@ export async function checkAndConsumeQuota(
     actionType: QuotaAction,
     consume: boolean = false
 ): Promise<QuotaResult> {
-    const supabase = createClient(cookies())
+    const supabase = createClient()
 
     // 1. Get User
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -158,7 +158,7 @@ export async function checkAndConsumeQuota(
  * Should be called asynchronously after a successful action.
  */
 export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
-    const supabase = createClient(cookies())
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 

@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 
 interface PurchaseResult {
     success: boolean
@@ -15,7 +14,7 @@ export async function initiateCreditPurchase(
     amountVnd: number,
     proofUrl: string
 ): Promise<PurchaseResult> {
-    const supabase = createClient(cookies())
+    const supabase = createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
@@ -49,7 +48,7 @@ export async function initiateCreditPurchase(
 }
 
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
-    const supabase = createClient(cookies())
+    const supabase = createClient()
 
     // Check Admin (Optional: implement strict role check)
     // For now, we assume this action is protected by UI/Route middleware or just check basic role
