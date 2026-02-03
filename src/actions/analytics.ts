@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 
 interface ROIMetrics {
     opportunities: number
@@ -10,7 +9,7 @@ interface ROIMetrics {
 }
 
 export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise<ROIMetrics> {
-    const supabase = createClient(cookies())
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { opportunities: 0, offersSent: 0, requestsClosed: 0 }
