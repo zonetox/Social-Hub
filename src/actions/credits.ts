@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { Database } from '../types/database.types'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 interface PurchaseResult {
     success: boolean
@@ -14,7 +16,7 @@ export async function initiateCreditPurchase(
     amountVnd: number,
     proofUrl: string
 ): Promise<PurchaseResult> {
-    const supabase = createClient()
+    const supabase = createClient() as SupabaseClient<Database>
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
@@ -47,10 +49,8 @@ export async function initiateCreditPurchase(
     return { success: true, transactionId: data.id }
 }
 
-import { Database } from '@/types/database.types'
-
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
-    const supabase = createClient()
+    const supabase = createClient() as SupabaseClient<Database>
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
 
@@ -64,8 +64,10 @@ export async function approveCreditTransaction(transactionId: string): Promise<P
         return { success: false, message: error.message }
     }
 
-    if (!result || !result.success) {
-        return { success: false, message: result?.message || 'Approval failed' }
+    const castedResult = result as { success: boolean, message: string } | null
+
+    if (!castedResult || !castedResult.success) {
+        return { success: false, message: castedResult?.message || 'Approval failed' }
     }
 
     return { success: true, message: 'Transaction approved successfully' }
