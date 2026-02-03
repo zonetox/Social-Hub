@@ -49,21 +49,15 @@ export async function initiateCreditPurchase(
 
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
     const supabase = createClient()
+    const sb: any = supabase   // 🔥 DÒNG SỐNG CÒN
 
-    // Check Admin (Optional: implement strict role check)
-    // For now, we assume this action is protected by UI/Route middleware or just check basic role
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
 
-    /* 
-       Real implementation should check:
-       const { data: profile } = ...
-       if (profile.role !== 'admin') throw ...
-    */
-
-    const { data: result, error } = await supabase.rpc('approve_credit_transaction', {
-        p_transaction_id: transactionId
-    })
+    const { data: result, error } = await sb.rpc(
+        'approve_credit_transaction',
+        { p_transaction_id: transactionId }
+    )
 
     if (error) {
         console.error('RPC Error:', error)
