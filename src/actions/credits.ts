@@ -61,7 +61,7 @@ export async function approveCreditTransaction(transactionId: string): Promise<P
        if (profile.role !== 'admin') throw ...
     */
 
-    const { data: result, error } = await supabase.rpc('approve_credit_transaction' as any, {
+    const { data: result, error } = await (supabase as any).rpc('approve_credit_transaction', {
         p_transaction_id: transactionId
     })
 

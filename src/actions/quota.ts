@@ -108,7 +108,7 @@ export async function checkAndConsumeQuota(
         if (creditsRemaining > 0) {
             if (consume) {
                 // Atomic Consume
-                const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit' as any, {
+                const { data: newAmount, error: rpcError } = await (supabase as any).rpc('consume_credit', {
                     p_user_id: user.id
                 })
 
