@@ -20,8 +20,8 @@ export async function initiateCreditPurchase(
     if (!user) return { success: false, message: 'Unauthorized' }
 
     // Create Transaction
-    const { data, error } = await (supabase
-        .from('payment_transactions') as any)
+    const { data, error } = await supabase
+        .from('payment_transactions')
         .insert({
             user_id: user.id,
             type: 'credit_purchase',
