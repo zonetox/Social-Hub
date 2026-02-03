@@ -1,6 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { Database } from '@/types/database'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 export interface RecommendedRequest {
     id: string
@@ -13,7 +15,7 @@ export interface RecommendedRequest {
 }
 
 export async function getRecommendedRequests(limit: number = 5): Promise<RecommendedRequest[]> {
-    const supabase = createClient()
+    const supabase = createClient() as unknown as SupabaseClient<Database>
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return []
@@ -27,7 +29,7 @@ export async function getRecommendedRequests(limit: number = 5): Promise<Recomme
             category:profile_categories(name)
         `)
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
     if (!profile || !profile.category_id) return []
 
@@ -37,7 +39,7 @@ export async function getRecommendedRequests(limit: number = 5): Promise<Recomme
         .select('request_id')
         .eq('profile_id', profile.id)
 
-    const offeredRequestIds = existingOffers?.map((o: any) => o.request_id) || []
+    const offeredRequestIds = existingOffers?.map((o) => o.request_id) || []
 
     // 3. Query Recommendations
     // Rule: Same Category, Open Status, Created within 7 days, Not offered yet
@@ -49,9 +51,9 @@ export async function getRecommendedRequests(limit: number = 5): Promise<Recomme
             description,
             created_at,
             category_id,
-            category:profile_categories!service_requests_category_id_fkey(name)
+            category:profile_categories(name)
         `)
-        .eq('category_id', (profile as any).category_id)
+        .eq('category_id', profile.category_id)
         .eq('status', 'open')
         .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
@@ -68,12 +70,12 @@ export async function getRecommendedRequests(limit: number = 5): Promise<Recomme
         return []
     }
 
-    return (recommendations as any[]).map((req: any) => ({
+    return (recommendations || []).map((req) => ({
         id: req.id,
         title: req.title,
         description: req.description,
-        created_at: req.created_at,
+        created_at: req.created_at || '',
         category_id: req.category_id,
-        category_name: req.category?.name
+        category_name: (req.category as any)?.name
     }))
 }

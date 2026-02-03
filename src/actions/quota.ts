@@ -1,8 +1,7 @@
-'use server'
-
 import { createClient } from '@/lib/supabase/server'
-import { cookies } from 'next/headers'
 import { sendEmail } from '@/lib/email/resend'
+import { Database } from '@/types/database'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 type QuotaAction = 'create_request' | 'create_offer'
 
@@ -17,13 +16,12 @@ interface QuotaResult {
 
 /**
  * Checks quota and optionally consumes usage (or credit).
- * Note: Subscription quota is "soft" (counted by rows), Credit is "hard" (decremented).
  */
 export async function checkAndConsumeQuota(
     actionType: QuotaAction,
     consume: boolean = false
 ): Promise<QuotaResult> {
-    const supabase = createClient()
+    const supabase = createClient() as SupabaseClient<Database>
 
     // 1. Get User
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -31,7 +29,7 @@ export async function checkAndConsumeQuota(
         return { allowed: false, reason: 'error', quota: 0, used: 0, creditsRemaining: 0 }
     }
 
-    // 2. Get Subscription & Plan
+    // 2. Get Subscription & Plan (strictly typed join)
     const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select(`
@@ -41,19 +39,16 @@ export async function checkAndConsumeQuota(
         .eq('user_id', user.id)
         .eq('status', 'active')
         .gte('expires_at', new Date().toISOString())
-        .single()
-
-    // Cast to any to avoid TS errors with joins not in types
-    const subData = subscription as any
+        .maybeSingle()
 
     // 3. Determine Quota Limit
     let limit = 0
-    if (subData?.plan?.features) {
-        const features = subData.plan.features as any
+    if (subscription?.plan) {
+        const features = subscription.plan.features as any // features is Json, need some flexibility here or cast to known interface
         if (actionType === 'create_request') {
-            limit = features.request_quota_per_month || 0
+            limit = (features as any)?.request_quota_per_month || 0
         } else {
-            limit = features.offer_quota_per_month || 0
+            limit = (features as any)?.offer_quota_per_month || 0
         }
     }
 
@@ -70,12 +65,10 @@ export async function checkAndConsumeQuota(
             .gte('created_at', startOfMonth)
         used = count || 0
     } else {
-        // Offer usage check
         const { data: profiles } = await supabase
             .from('profiles')
             .select('id')
             .eq('user_id', user.id)
-            .returns<{ id: string }[]>()
 
         const profileIds = profiles?.map(p => p.id) || []
 
@@ -89,20 +82,17 @@ export async function checkAndConsumeQuota(
         }
     }
 
-    // Check Credits (for info)
+    // Check Credits
     const { data: creditData } = await supabase
         .from('card_credits')
         .select('amount')
         .eq('user_id', user.id)
-        .returns<{ amount: number }>() // Keep returns but also cast to be safe
         .maybeSingle()
 
-    // Fix: Explicitly cast creditData to handle persistent 'never' inference
-    const creditsRemaining = (creditData as { amount: number } | null)?.amount || 0
+    const creditsRemaining = creditData?.amount || 0
 
     // 5. Compare & Logic
     if (used < limit) {
-        // Allowed by Subscription Quota
         return {
             allowed: true,
             source: 'subscription',
@@ -110,49 +100,42 @@ export async function checkAndConsumeQuota(
             used,
             creditsRemaining
         }
-    } else {
-        // Sub Quota Exceeded. Check Credits.
-        if (creditsRemaining > 0) {
-            if (consume) {
-                // Atomic Consume - Use bypass pattern for RPC as per Manual
-                const supabaseAny: any = supabase
+    } else if (creditsRemaining > 0) {
+        if (consume) {
+            // Atomic Consume using RPC
+            const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit', {
+                p_user_id: user.id
+            })
 
-                const { data: newAmount, error: rpcError } = await supabaseAny.rpc('consume_credit', {
-                    p_user_id: user.id
-                })
-
-                if (rpcError || newAmount === null) {
-                    console.error('Credit consumption failed:', rpcError)
-                    return {
-                        allowed: false,
-                        reason: 'quota_exceeded',
-                        quota: limit,
-                        used,
-                        creditsRemaining
-                    }
-                }
-
+            if (rpcError || newAmount === null || typeof newAmount !== 'number') {
+                console.error('Credit consumption failed:', rpcError)
                 return {
-                    allowed: true,
-                    source: 'credit',
-                    quota: limit,
-                    used,
-                    creditsRemaining: newAmount // Updated amount
-                }
-            } else {
-                // Just checking, allow if credits exist
-                return {
-                    allowed: true,
-                    source: 'credit',
+                    allowed: false,
+                    reason: 'quota_exceeded',
                     quota: limit,
                     used,
                     creditsRemaining
                 }
             }
+
+            return {
+                allowed: true,
+                source: 'credit',
+                quota: limit,
+                used,
+                creditsRemaining: newAmount
+            }
+        } else {
+            return {
+                allowed: true,
+                source: 'credit',
+                quota: limit,
+                used,
+                creditsRemaining
+            }
         }
     }
 
-    // Blocked
     return {
         allowed: false,
         reason: 'quota_exceeded',
@@ -163,32 +146,26 @@ export async function checkAndConsumeQuota(
 }
 
 /**
- * Checks if usage is >= 80% and sends a warning email if not already sent this month.
- * Should be called asynchronously after a successful action.
+ * Checks usage and sends warning email if >= 80%.
  */
 export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
-    const supabase = createClient()
+    const supabase = createClient() as SupabaseClient<Database>
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // 2. Get Subscription (Redundant but safe)
     const { data: subscription } = await supabase
         .from('user_subscriptions')
         .select(`*, plan:subscription_plans(features)`)
         .eq('user_id', user.id)
         .eq('status', 'active')
-        .single()
+        .maybeSingle()
 
-    // Cast to any (Subscription joins are complex to type strictly without full plan types)
-    // This is acceptable as 'any' scope is strictly limited to this specific join parsing
-    const subData = subscription as any
+    if (!subscription?.plan?.features) return
 
-    if (!subData?.plan?.features) return
-
-    const features = subData.plan.features as any
-    let limit = 0
-    if (actionType === 'create_request') limit = features.request_quota_per_month || 0
-    else limit = features.offer_quota_per_month || 0
+    const features = subscription.plan.features as any
+    let limit = (actionType === 'create_request')
+        ? (features?.request_quota_per_month || 0)
+        : (features?.offer_quota_per_month || 0)
 
     if (limit === 0) return
 
@@ -209,7 +186,6 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
             .from('profiles')
             .select('id')
             .eq('user_id', user.id)
-            .returns<{ id: string }[]>()
 
         const profileIds = profiles?.map(p => p.id) || []
         if (profileIds.length > 0) {
@@ -222,18 +198,14 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         }
     }
 
-    // Check Threshold (>= 80%)
     if (used < limit * 0.8) return
 
-    // Check if Warning Sent
-    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
+    const currentMonthStr = format(now, 'yyyy-MM')
 
     const { data: profile } = await supabase
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
-        .returns<{ id: string }>()
-        .limit(1)
         .maybeSingle()
 
     if (!profile) return
@@ -246,29 +218,27 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         .contains('metadata', { month: currentMonthStr, action: actionType })
         .maybeSingle()
 
-    if (existingWarning) return // Already sent
+    if (existingWarning) return
 
     // Send Email
     const typeName = actionType === 'create_request' ? 'gửi yêu cầu' : 'gửi báo giá'
-    await sendEmail(
-        user.email || '',
-        `Cảnh báo: Bạn sắp hết lượt ${typeName} tháng này`,
+    await sendEmail({
+        to: user.email || '',
+        subject: `Cảnh báo: Bạn sắp hết lượt ${typeName} tháng này`,
+        html: `
+            <h1>Bạn đã sử dụng ${used}/${limit} lượt ${typeName}</h1>
+            <p>Bạn đã đạt hơn 80% giới hạn gói của mình.</p>
+            <p>Để tránh gián đoạn công việc, hãy cân nhắc nâng cấp gói VIP hoặc mua thêm Credit.</p>
+            <br/>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/pricing" style="background-color: #F59E0B; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                Nâng cấp ngay
+            </a>
         `
-        <h1>Bạn đã sử dụng ${used}/${limit} lượt ${typeName}</h1>
-        <p>Bạn đã đạt hơn 80% giới hạn gói của mình.</p>
-        <p>Để tránh gián đoạn công việc, hãy cân nhắc nâng cấp gói VIP hoặc mua thêm Credit.</p>
-        <br/>
-        <a href="${process.env.NEXT_PUBLIC_SITE_URL}/pricing" style="background-color: #F59E0B; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-            Nâng cấp ngay
-        </a>
-        `
-    )
+    })
 
-    // Log Event - Use any cast for insert to avoid strict checks on JSON metadata
-    await (supabase.from('analytics') as any).insert({
+    await supabase.from('analytics').insert({
         profile_id: profile.id,
         event_type: 'quota_warning_sent',
-        metadata: { month: currentMonthStr, action: actionType },
-        created_at: new Date().toISOString()
+        metadata: { month: currentMonthStr, action: actionType }
     })
 }

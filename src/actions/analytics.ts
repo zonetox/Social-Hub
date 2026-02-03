@@ -1,7 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { Database } from '@/types/database.types'
+import { Database } from '@/types/database'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 type ProfileRow = Database['public']['Tables']['profiles']['Row']
 
@@ -12,7 +13,7 @@ interface ROIMetrics {
 }
 
 export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise<ROIMetrics> {
-    const supabase = createClient()
+    const supabase = createClient() as unknown as SupabaseClient<Database>
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { opportunities: 0, offersSent: 0, requestsClosed: 0 }
@@ -51,7 +52,6 @@ export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise
         .gte('created_at', startDate)
 
     // 4. Count Requests Closed (Engagement)
-    // Using !inner join to filter based on related table status
     const { count: requestsClosed } = await supabase
         .from('service_offers')
         .select(`

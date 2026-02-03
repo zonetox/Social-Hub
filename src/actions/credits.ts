@@ -1,6 +1,8 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '../lib/supabase/server'
+import { Database } from '../types/database'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 interface PurchaseResult {
     success: boolean
@@ -14,7 +16,7 @@ export async function initiateCreditPurchase(
     amountVnd: number,
     proofUrl: string
 ): Promise<PurchaseResult> {
-    const supabase = createClient()
+    const supabase = createClient() as unknown as SupabaseClient<Database>
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
@@ -48,7 +50,7 @@ export async function initiateCreditPurchase(
 }
 
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
-    const supabase = createClient()
+    const supabase = createClient() as unknown as SupabaseClient<Database>
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
@@ -63,9 +65,10 @@ export async function approveCreditTransaction(transactionId: string): Promise<P
         return { success: false, message: error.message }
     }
 
-    // result type is now correctly inferred from Database.Functions.approve_credit_transaction
-    if (!result || !result.success) {
-        return { success: false, message: result?.message || 'Approval failed' }
+    // result is Json from Database types, cast it to handle success/message
+    const resultCast = result as { success?: boolean; message?: string } | null
+    if (!resultCast || !resultCast.success) {
+        return { success: false, message: resultCast?.message || 'Approval failed' }
     }
 
     return { success: true, message: 'Transaction approved successfully' }
