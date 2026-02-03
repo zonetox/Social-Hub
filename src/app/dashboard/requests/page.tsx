@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { Database } from '@/types/database'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -15,7 +17,7 @@ import clsx from 'clsx'
 
 export default function MyRequestsPage() {
     const { user } = useAuth()
-    const supabase = createClient()
+    const supabase = createClient() as unknown as SupabaseClient<Database>
 
     const [requests, setRequests] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -112,7 +114,7 @@ export default function MyRequestsPage() {
                                             {req.category_name}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <Badge variant={req.status === 'open' ? 'success' : 'secondary'} className={clsx(
+                                            <Badge variant={req.status === 'open' ? 'success' : 'default'} className={clsx(
                                                 "capitalize",
                                                 req.status === 'open' ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
                                             )}>

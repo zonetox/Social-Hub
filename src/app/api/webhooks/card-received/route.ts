@@ -54,7 +54,11 @@ export async function POST(request: Request) {
         </div>
       `
 
-      await sendEmail((receiver as any).email, `${(sender as any).full_name} sent you their profile card! 🎉`, html)
+      await sendEmail({
+        to: (receiver as any).email,
+        subject: `${(sender as any).full_name} sent you their profile card! 🎉`,
+        html: html
+      })
     }
 
     return NextResponse.json({ success: true })

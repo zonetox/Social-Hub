@@ -28,15 +28,20 @@ export function RequestCard({ request, isOwner }: RequestCardProps) {
                             <span>
                                 {formatDistanceToNow(new Date(request.created_at), { addSuffix: true, locale: vi })}
                             </span>
+                            {request.status && (
+                                <Badge variant="default" className="ml-2">
+                                    {request.status}
+                                </Badge>
+                            )}
                             {isOwner && (
-                                <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 ml-2">
+                                <Badge variant="default" className="bg-blue-50 text-blue-700 hover:bg-blue-100 ml-2">
                                     Của bạn
                                 </Badge>
                             )}
                         </div>
                     </div>
                     {request.category && (
-                        <Badge variant="outline" className="whitespace-nowrap flex items-center gap-1">
+                        <Badge variant="default" className="whitespace-nowrap flex items-center gap-1">
                             <Tag className="w-3 h-3" />
                             {request.category.name}
                         </Badge>

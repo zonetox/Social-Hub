@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/hooks/useAuth'
-import type { Database } from '@/types/database.types'
+import type { Database } from '@/types/database'
 import { Card } from '@/components/ui/Card'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { formatNumber, formatDate } from '@/lib/utils/formatting'

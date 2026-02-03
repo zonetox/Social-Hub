@@ -5,11 +5,18 @@ const getResendClient = () => {
     return new Resend(process.env.RESEND_API_KEY);
 };
 
+interface SendEmailOptions {
+    to: string
+    subject: string
+    html: string
+    text?: string
+}
+
 /**
  * Sends an email using Resend.
  * Fallbacks to console log if API key is missing for development.
  */
-export async function sendEmail(to: string, subject: string, html: string) {
+export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
     const resend = getResendClient();
     const from = process.env.NEXT_PUBLIC_EMAIL_FROM || 'Social HUB <noreply@social-hub.com>';
 
@@ -28,6 +35,7 @@ export async function sendEmail(to: string, subject: string, html: string) {
             to: [to],
             subject: subject,
             html: html,
+            text: text || html.replace(/<[^>]*>?/gm, ''), // Simple text fallback
         })
 
         if (error) {

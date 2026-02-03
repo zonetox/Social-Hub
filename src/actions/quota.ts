@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail } from '@/lib/email/resend'
-import { Database } from '@/types/database'
+import type { Database } from '@/types/database'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { format } from 'date-fns'
 
 type QuotaAction = 'create_request' | 'create_offer'
 
@@ -21,7 +22,7 @@ export async function checkAndConsumeQuota(
     actionType: QuotaAction,
     consume: boolean = false
 ): Promise<QuotaResult> {
-    const supabase = createClient() as SupabaseClient<Database>
+    const supabase = createClient() as unknown as SupabaseClient<Database>
 
     // 1. Get User
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -149,7 +150,7 @@ export async function checkAndConsumeQuota(
  * Checks usage and sends warning email if >= 80%.
  */
 export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
-    const supabase = createClient() as SupabaseClient<Database>
+    const supabase = createClient() as unknown as SupabaseClient<Database>
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 

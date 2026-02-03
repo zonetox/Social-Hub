@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { SupabaseClient } from '@supabase/supabase-js'
+import { Database } from '@/types/database'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { OfferForm } from '@/components/marketplace/OfferForm'
 import { Button } from '@/components/ui/Button'
@@ -10,14 +12,15 @@ import { Badge } from '@/components/ui/Badge'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
-import { LayoutDashboard, Clock, User, DollarSign, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Clock, User, DollarSign, MessageSquare, Send } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 import Image from 'next/image'
 
 export default function RequestDetailPage() {
     const { id } = useParams()
     const { user } = useAuth()
-    const supabase = createClient()
+    const supabase = createClient() as unknown as SupabaseClient<Database>
 
     const [request, setRequest] = useState<any>(null)
     const [offers, setOffers] = useState<any[]>([])
@@ -36,7 +39,7 @@ export default function RequestDetailPage() {
                 category:profile_categories(name, icon),
                 creator:users(full_name, avatar_url)
             `)
-            .eq('id', id)
+            .eq('id', id as string)
             .single()
 
         if (error || !reqData) {
@@ -54,7 +57,7 @@ export default function RequestDetailPage() {
                 *,
                 profile:profiles(id, display_name, slug, user:users(avatar_url))
             `)
-            .eq('request_id', id)
+            .eq('request_id', id as string)
             .order('created_at', { ascending: false })
 
         if (offersData) {
@@ -67,8 +70,8 @@ export default function RequestDetailPage() {
             // If I am NOT the owner, I should only see MY offer essentially (or none).
             // Actually RLS: "View own offer OR Request owner".
             // So if I am provider, `offersData` will containing ONLY my offer if it exists.
-            if (reqData.created_by_user_id !== user.id) {
-                if (offersData.length > 0) {
+            if (reqData && reqData.created_by_user_id !== user.id) {
+                if (offersData && offersData.length > 0) {
                     setMyOffer(offersData[0])
                 }
             }
@@ -84,7 +87,7 @@ export default function RequestDetailPage() {
     if (loading) return <div className="flex justify-center py-20"><LoadingSpinner /></div>
     if (!request) return <div className="text-center py-20">Không tìm thấy yêu cầu hoặc bạn không có quyền xem.</div>
 
-    const isOwner = user?.id === request.created_by_user_id
+    const isOwner = user?.id === (request as any)?.created_by_user_id
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
@@ -154,7 +157,7 @@ export default function RequestDetailPage() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                                <Badge variant={offer.price ? 'default' : 'secondary'} className="text-sm px-3 py-1">
+                                                <Badge variant={offer.price ? 'success' : 'default'} className="text-sm px-3 py-1">
                                                     {offer.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(offer.price) : 'Thương lượng'}
                                                 </Badge>
                                             </div>
@@ -162,7 +165,7 @@ export default function RequestDetailPage() {
                                                 {offer.message}
                                             </div>
                                             <div className="mt-3 flex justify-end">
-                                                <a href={`tel:${offer.profile.phone || ''}#placeholder`} onClick={(e) => { e.preventDefault(); toast.info("Tính năng liên hệ đang phát triển") }}>
+                                                <a href={`tel:${offer.profile.phone || ''}#placeholder`} onClick={(e) => { e.preventDefault(); toast.success("Tính năng liên hệ đang phát triển") }}>
                                                     <Button size="sm" variant="outline">Liên hệ lại</Button>
                                                 </a>
                                             </div>
