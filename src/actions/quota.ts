@@ -113,8 +113,10 @@ export async function checkAndConsumeQuota(
         // Sub Quota Exceeded. Check Credits.
         if (creditsRemaining > 0) {
             if (consume) {
-                // Atomic Consume - Strict Type Call
-                const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit', {
+                // Atomic Consume - Use bypass pattern for RPC as per Manual
+                const supabaseAny: any = supabase
+
+                const { data: newAmount, error: rpcError } = await supabaseAny.rpc('consume_credit', {
                     p_user_id: user.id
                 })
 

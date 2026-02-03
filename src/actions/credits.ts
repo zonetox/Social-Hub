@@ -49,10 +49,12 @@ export async function initiateCreditPurchase(
 
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
     const supabase = createClient()
+    const sb: any = supabase   // 🔥 DÒNG QUYẾT ĐỊNH
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
 
-    const { data: result, error } = await supabase.rpc(
+    const { data: result, error } = await sb.rpc(
         'approve_credit_transaction',
         { p_transaction_id: transactionId }
     )
@@ -62,7 +64,6 @@ export async function approveCreditTransaction(transactionId: string): Promise<P
         return { success: false, message: error.message }
     }
 
-    // result is JSONB: { success: boolean, message?: string, new_credit_balance?: number }
     if (!result || !result.success) {
         return { success: false, message: result?.message || 'Approval failed' }
     }
