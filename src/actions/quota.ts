@@ -94,10 +94,10 @@ export async function checkAndConsumeQuota(
         .from('card_credits')
         .select('amount')
         .eq('user_id', user.id)
+        .returns<{ amount: number }>() // Strict typing
         .maybeSingle()
 
-    // Fix: Explicitly cast creditData to handle potential 'never' inference
-    const creditsRemaining = (creditData as any)?.amount || 0
+    const creditsRemaining = creditData?.amount || 0
 
     // 5. Compare & Logic
     if (used < limit) {
@@ -113,7 +113,7 @@ export async function checkAndConsumeQuota(
         // Sub Quota Exceeded. Check Credits.
         if (creditsRemaining > 0) {
             if (consume) {
-                // Atomic Consume - Use bypass pattern for RPC
+                // Atomic Consume - Use bypass pattern for RPC as per High Standard Manual
                 const sb: any = supabase
 
                 const { data: newAmount, error: rpcError } = await sb.rpc('consume_credit', {
@@ -232,16 +232,15 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         .select('id')
         .eq('user_id', user.id)
         .limit(1)
-        .maybeSingle()
+        .single()
 
-    // Explicit cast for profile
-    const userProfile = profile as any
-    if (!userProfile) return
+    // Explicit check instead of cast
+    if (!profile) return
 
     const { data: existingWarning } = await supabase
         .from('analytics')
         .select('id')
-        .eq('profile_id', userProfile.id)
+        .eq('profile_id', profile.id)
         .eq('event_type', 'quota_warning_sent')
         .contains('metadata', { month: currentMonthStr, action: actionType })
         .maybeSingle()
@@ -264,9 +263,10 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         `
     )
 
-    // Log Event - Use any cast for insert to avoid strict checks on JSON metadata
-    await (supabase.from('analytics') as any).insert({
-        profile_id: userProfile.id,
+    // Log Event - Use type definition from Database interface if possible, or explicit object
+    // Metadata is Json type, so passing object shouldn't require 'any' if table is typed correctly
+    await supabase.from('analytics').insert({
+        profile_id: profile.id,
         event_type: 'quota_warning_sent',
         metadata: { month: currentMonthStr, action: actionType },
         created_at: new Date().toISOString()
