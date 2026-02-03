@@ -689,7 +689,11 @@ export interface Database {
         Args: {
           p_transaction_id: string
         }
-        Returns: Json
+        Returns: {
+          success: boolean
+          message: string
+          new_credit_balance?: number
+        }
       }
       consume_credit: {
         Args: {
