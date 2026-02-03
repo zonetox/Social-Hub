@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useRouter } from 'next/navigation'
 import { toast } from 'react-hot-toast'
-import { initiateCreditPurchase } from '@/actions/credits'
 import { Check, Copy, CreditCard, Upload } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -96,12 +95,17 @@ export default function BuyCreditsPage() {
 
         setSubmitting(true)
         try {
-            const result = await initiateCreditPurchase(
-                selectedPackage.id,
-                selectedPackage.credits,
-                selectedPackage.price,
-                proofUrl
-            )
+            const response = await fetch('/api/credits/buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    packageId: selectedPackage.id,
+                    credits: selectedPackage.credits,
+                    amountVnd: selectedPackage.price,
+                    proofUrl
+                })
+            })
+            const result = await response.json()
 
             if (result.success) {
                 toast.success('Gửi yêu cầu mua thành công! Vui lòng chờ xác nhận.')

@@ -12,18 +12,17 @@ interface ROIMetrics {
     requestsClosed: number
 }
 
-export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise<ROIMetrics> {
-    const supabase = createClient() as unknown as SupabaseClient<Database>
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) return { opportunities: 0, offersSent: 0, requestsClosed: 0 }
-
+export async function getBusinessROIMetricsInternal(
+    supabase: SupabaseClient<Database>,
+    userId: string,
+    timeRange: 'month' | 'all'
+): Promise<ROIMetrics> {
     // 1. Get User's Profile & Category
     // We explicitly type the response to avoid 'never' inference issues with complex queries
     const { data: profile } = await supabase
         .from('profiles')
         .select('id, category_id')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single()
 
     // Proper type guard/casting using the Database definition
@@ -67,5 +66,14 @@ export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise
         offersSent: offersSent || 0,
         requestsClosed: requestsClosed || 0
     }
+}
+
+export async function getBusinessROIMetrics(timeRange: 'month' | 'all'): Promise<ROIMetrics> {
+    const supabase = createClient() as unknown as SupabaseClient<Database>
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { opportunities: 0, offersSent: 0, requestsClosed: 0 }
+
+    return getBusinessROIMetricsInternal(supabase, user.id, timeRange)
 }
 

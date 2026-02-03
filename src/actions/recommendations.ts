@@ -14,12 +14,11 @@ export interface RecommendedRequest {
     budget?: number
 }
 
-export async function getRecommendedRequests(limit: number = 5): Promise<RecommendedRequest[]> {
-    const supabase = createClient() as unknown as SupabaseClient<Database>
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) return []
-
+export async function getRecommendedRequestsInternal(
+    supabase: SupabaseClient<Database>,
+    userId: string,
+    limit: number = 5
+): Promise<RecommendedRequest[]> {
     // 1. Get User's First Profile & Category
     const { data: profile } = await supabase
         .from('profiles')
@@ -28,7 +27,7 @@ export async function getRecommendedRequests(limit: number = 5): Promise<Recomme
             category_id,
             category:profile_categories(name)
         `)
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle()
 
     if (!profile || !profile.category_id) return []
@@ -78,4 +77,13 @@ export async function getRecommendedRequests(limit: number = 5): Promise<Recomme
         category_id: req.category_id,
         category_name: (req.category as any)?.name
     }))
+}
+
+export async function getRecommendedRequests(limit: number = 5): Promise<RecommendedRequest[]> {
+    const supabase = createClient() as unknown as SupabaseClient<Database>
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return []
+
+    return getRecommendedRequestsInternal(supabase, user.id, limit)
 }

@@ -10,22 +10,19 @@ interface PurchaseResult {
     transactionId?: string
 }
 
-export async function initiateCreditPurchase(
+export async function initiateCreditPurchaseInternal(
+    supabase: SupabaseClient<Database>,
+    userId: string,
     packageId: string,
     credits: number,
     amountVnd: number,
     proofUrl: string
 ): Promise<PurchaseResult> {
-    const supabase = createClient() as unknown as SupabaseClient<Database>
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { success: false, message: 'Unauthorized' }
-
     // Create Transaction
     const { data, error } = await supabase
         .from('payment_transactions')
         .insert({
-            user_id: user.id,
+            user_id: userId,
             type: 'credit_purchase',
             amount_usd: 0,
             amount_vnd: amountVnd,
@@ -47,6 +44,20 @@ export async function initiateCreditPurchase(
     }
 
     return { success: true, transactionId: data.id }
+}
+
+export async function initiateCreditPurchase(
+    packageId: string,
+    credits: number,
+    amountVnd: number,
+    proofUrl: string
+): Promise<PurchaseResult> {
+    const supabase = createClient() as unknown as SupabaseClient<Database>
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, message: 'Unauthorized' }
+
+    return initiateCreditPurchaseInternal(supabase, user.id, packageId, credits, amountVnd, proofUrl)
 }
 
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {

@@ -2,7 +2,7 @@
 
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { RecommendedRequest } from '@/actions/recommendations'
+import type { RecommendedRequest } from '@/actions/recommendations'
 import { formatDistanceToNow } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Link from 'next/link'

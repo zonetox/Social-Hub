@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { Card } from '@/components/ui/Card'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { getBusinessROIMetrics } from '@/actions/analytics'
 import { TrendingUp, Send, CheckCircle, Filter } from 'lucide-react'
 import clsx from 'clsx'
 
@@ -20,7 +19,12 @@ export default function BusinessOIDashboard() {
             if (!user) return
             setLoading(true)
             try {
-                const data = await getBusinessROIMetrics(filter)
+                const response = await fetch('/api/analytics/roi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ timeRange: filter })
+                })
+                const data = await response.json()
                 setMetrics(data)
             } catch (error) {
                 console.error('Failed to fetch ROI:', error)

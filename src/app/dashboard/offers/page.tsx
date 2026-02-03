@@ -13,7 +13,7 @@ import Link from 'next/link'
 import { toast } from 'react-hot-toast'
 import clsx from 'clsx'
 import { useRouter } from 'next/navigation'
-import { getRecommendedRequests, RecommendedRequest } from '@/actions/recommendations'
+import type { RecommendedRequest } from '@/actions/recommendations'
 import { RecommendedRequests } from '@/components/dashboard/RecommendedRequests'
 
 export default function MyOffersPage() {
@@ -86,7 +86,12 @@ export default function MyOffersPage() {
             // 3. Fetch Recommendations if no offers or always? User said "Dashboard Home" and "Empty State"
             // Let's fetch it always to show as a section, but emphasize on empty
             try {
-                const recs = await getRecommendedRequests(5)
+                const recsRes = await fetch('/api/recommendations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limit: 5 })
+                })
+                const recs = await recsRes.json()
                 setRecommendations(recs)
             } catch (err) {
                 console.error('Failed to load recommendations', err)
