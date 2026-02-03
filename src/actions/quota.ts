@@ -94,10 +94,11 @@ export async function checkAndConsumeQuota(
         .from('card_credits')
         .select('amount')
         .eq('user_id', user.id)
-        .returns<{ amount: number }>()
+        .returns<{ amount: number }>() // Keep returns but also cast to be safe
         .maybeSingle()
 
-    const creditsRemaining = creditData?.amount || 0
+    // Fix: Explicitly cast creditData to handle persistent 'never' inference
+    const creditsRemaining = (creditData as { amount: number } | null)?.amount || 0
 
     // 5. Compare & Logic
     if (used < limit) {
@@ -263,9 +264,9 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         `
     )
 
-    // Log Event - Strict Insert
-    await supabase.from('analytics').insert({
-        profile_id: profile.id, // strict type from .returns
+    // Log Event - Use any cast for insert to avoid strict checks on JSON metadata
+    await (supabase.from('analytics') as any).insert({
+        profile_id: profile.id,
         event_type: 'quota_warning_sent',
         metadata: { month: currentMonthStr, action: actionType },
         created_at: new Date().toISOString()
