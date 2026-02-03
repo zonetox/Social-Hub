@@ -71,7 +71,12 @@ export async function checkAndConsumeQuota(
         used = count || 0
     } else {
         // Offer usage check
-        const { data: profiles } = await supabase.from('profiles').select('id').eq('user_id', user.id)
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .returns<{ id: string }[]>()
+
         const profileIds = profiles?.map(p => p.id) || []
 
         if (profileIds.length > 0) {
@@ -89,9 +94,10 @@ export async function checkAndConsumeQuota(
         .from('card_credits')
         .select('amount')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
-    const creditsRemaining = creditData?.amount || 0
+    // Fix: Explicitly cast creditData to handle potential 'never' inference
+    const creditsRemaining = (creditData as any)?.amount || 0
 
     // 5. Compare & Logic
     if (used < limit) {
@@ -107,8 +113,10 @@ export async function checkAndConsumeQuota(
         // Sub Quota Exceeded. Check Credits.
         if (creditsRemaining > 0) {
             if (consume) {
-                // Atomic Consume
-                const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit', {
+                // Atomic Consume - Use bypass pattern for RPC
+                const sb: any = supabase
+
+                const { data: newAmount, error: rpcError } = await sb.rpc('consume_credit', {
                     p_user_id: user.id
                 })
 
@@ -170,7 +178,8 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         .eq('status', 'active')
         .single()
 
-    // Cast to any
+    // Cast to any (Subscription joins are complex to type strictly without full plan types)
+    // Minimizing scope of 'any'
     const subData = subscription as any
 
     if (!subData?.plan?.features) return
@@ -195,7 +204,12 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
             .gte('created_at', startOfMonth)
         used = count || 0
     } else {
-        const { data: profiles } = await supabase.from('profiles').select('id').eq('user_id', user.id)
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .returns<{ id: string }[]>()
+
         const profileIds = profiles?.map(p => p.id) || []
         if (profileIds.length > 0) {
             const { count } = await supabase
@@ -213,20 +227,24 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
     // Check if Warning Sent
     const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}` // YYYY-MM
 
-    // We assume profiles[0] is used for analytics logging or just log to first profile found
-    // Or we need a profile_id for analytics. Analytics table has profile_id NOT user_id.
-    // Let's find a profile.
-    const { data: profile } = await supabase.from('profiles').select('id').eq('user_id', user.id).limit(1).single()
-    if (!profile) return
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle()
+
+    // Explicit cast for profile
+    const userProfile = profile as any
+    if (!userProfile) return
 
     const { data: existingWarning } = await supabase
         .from('analytics')
         .select('id')
-        .eq('profile_id', profile.id)
+        .eq('profile_id', userProfile.id)
         .eq('event_type', 'quota_warning_sent')
-        .contains('metadata', { month: currentMonthStr, action: actionType }) // Specific to action? Or general? "Subject: Bạn sắp dùng hết lượt báo giá" -> Specific.
-        // Let's be specific.
-        .single() // use maybeSingle or search
+        .contains('metadata', { month: currentMonthStr, action: actionType })
+        .maybeSingle()
 
     if (existingWarning) return // Already sent
 
@@ -246,9 +264,9 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         `
     )
 
-    // Log Event
+    // Log Event - Use any cast for insert to avoid strict checks on JSON metadata
     await (supabase.from('analytics') as any).insert({
-        profile_id: profile.id,
+        profile_id: userProfile.id,
         event_type: 'quota_warning_sent',
         metadata: { month: currentMonthStr, action: actionType },
         created_at: new Date().toISOString()
