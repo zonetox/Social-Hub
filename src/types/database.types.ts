@@ -685,7 +685,18 @@ export interface Database {
       }
     }
     Functions: {
-      [_ in never]: never
+      approve_credit_transaction: {
+        Args: {
+          p_transaction_id: string
+        }
+        Returns: Json
+      }
+      consume_credit: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
