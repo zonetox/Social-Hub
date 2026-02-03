@@ -94,7 +94,7 @@ export async function checkAndConsumeQuota(
         .from('card_credits')
         .select('amount')
         .eq('user_id', user.id)
-        .returns<{ amount: number }>() // Strict typing
+        .returns<{ amount: number }>()
         .maybeSingle()
 
     const creditsRemaining = creditData?.amount || 0
@@ -113,10 +113,8 @@ export async function checkAndConsumeQuota(
         // Sub Quota Exceeded. Check Credits.
         if (creditsRemaining > 0) {
             if (consume) {
-                // Atomic Consume - Use bypass pattern for RPC as per High Standard Manual
-                const sb: any = supabase
-
-                const { data: newAmount, error: rpcError } = await sb.rpc('consume_credit', {
+                // Atomic Consume - Strict Type Call
+                const { data: newAmount, error: rpcError } = await supabase.rpc('consume_credit', {
                     p_user_id: user.id
                 })
 
@@ -179,7 +177,7 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         .single()
 
     // Cast to any (Subscription joins are complex to type strictly without full plan types)
-    // Minimizing scope of 'any'
+    // This is acceptable as 'any' scope is strictly limited to this specific join parsing
     const subData = subscription as any
 
     if (!subData?.plan?.features) return
@@ -231,10 +229,10 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         .from('profiles')
         .select('id')
         .eq('user_id', user.id)
+        .returns<{ id: string }>()
         .limit(1)
-        .single()
+        .maybeSingle()
 
-    // Explicit check instead of cast
     if (!profile) return
 
     const { data: existingWarning } = await supabase
@@ -263,10 +261,9 @@ export async function checkAndSendQuotaWarning(actionType: QuotaAction) {
         `
     )
 
-    // Log Event - Use type definition from Database interface if possible, or explicit object
-    // Metadata is Json type, so passing object shouldn't require 'any' if table is typed correctly
+    // Log Event - Strict Insert
     await supabase.from('analytics').insert({
-        profile_id: profile.id,
+        profile_id: profile.id, // strict type from .returns
         event_type: 'quota_warning_sent',
         metadata: { month: currentMonthStr, action: actionType },
         created_at: new Date().toISOString()
