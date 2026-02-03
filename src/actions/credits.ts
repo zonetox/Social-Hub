@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { Database } from '../types/database.types'
 
 interface PurchaseResult {
     success: boolean
@@ -16,13 +15,12 @@ export async function initiateCreditPurchase(
     proofUrl: string
 ): Promise<PurchaseResult> {
     const supabase = createClient()
-    const sb: any = supabase // Use mandated bypass to unblock build
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
 
     // Create Transaction
-    const { data, error } = await sb
+    const { data, error } = await supabase
         .from('payment_transactions')
         .insert({
             user_id: user.id,
@@ -51,12 +49,11 @@ export async function initiateCreditPurchase(
 
 export async function approveCreditTransaction(transactionId: string): Promise<PurchaseResult> {
     const supabase = createClient()
-    const sb: any = supabase // Use mandated bypass
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { success: false, message: 'Unauthorized' }
 
-    const { data: result, error } = await sb.rpc(
+    const { data: result, error } = await supabase.rpc(
         'approve_credit_transaction',
         { p_transaction_id: transactionId }
     )
@@ -66,10 +63,9 @@ export async function approveCreditTransaction(transactionId: string): Promise<P
         return { success: false, message: error.message }
     }
 
-    const castedResult = result as { success: boolean, message: string } | null
-
-    if (!castedResult || !castedResult.success) {
-        return { success: false, message: castedResult?.message || 'Approval failed' }
+    // result type is now correctly inferred from Database.Functions.approve_credit_transaction
+    if (!result || !result.success) {
+        return { success: false, message: result?.message || 'Approval failed' }
     }
 
     return { success: true, message: 'Transaction approved successfully' }
