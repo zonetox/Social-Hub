@@ -35,7 +35,7 @@ export default function AdminPaymentsPage() {
 
     useEffect(() => {
         if (!authLoading && !isAdmin) {
-            redirect('/hub')
+            redirect('/explore')
         }
     }, [authLoading, isAdmin])
 

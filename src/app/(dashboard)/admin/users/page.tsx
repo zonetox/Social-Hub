@@ -36,7 +36,7 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         if (!authLoading && !isAdmin) {
-            redirect('/hub')
+            redirect('/explore')
         }
     }, [authLoading, isAdmin])
 

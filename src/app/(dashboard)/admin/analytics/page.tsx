@@ -61,7 +61,7 @@ export default function AdminAnalyticsPage() {
 
     useEffect(() => {
         if (!authLoading && !isAdmin) {
-            redirect('/hub')
+            redirect('/explore')
         }
     }, [authLoading, isAdmin])
 
