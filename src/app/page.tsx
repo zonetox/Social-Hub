@@ -125,16 +125,16 @@ export default function LandingPage() {
                 onCategorySelect={setActiveCategory}
             />
 
-            {/* Latest Requests Section - NEW */}
+            {/* Latest Requests Section */}
             {!activeCategory && requests.length > 0 && (
                 <section className="max-w-7xl mx-auto px-4 py-8 mb-8">
                     <div className="flex items-center justify-between mb-6">
                         <div>
-                            <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                                <Briefcase className="w-6 h-6 text-amber-500 fill-current" />
-                                Cơ hội việc làm mới
+                            <h2 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2 uppercase tracking-tight">
+                                <Briefcase className="w-6 h-6 text-primary-600 fill-current" />
+                                Yêu cầu tư vấn / Báo giá mới nhất
                             </h2>
-                            <p className="text-gray-500 text-sm font-medium mt-1">Các dự án đang tìm kiếm chuyên gia</p>
+                            <p className="text-gray-500 text-sm font-medium mt-1">Cơ hội kinh doanh & dự án thực tế từ thị trường</p>
                         </div>
                         <Link href="/requests">
                             <Button variant="ghost" className="text-primary-600 hover:bg-primary-50 font-bold group">
@@ -182,12 +182,12 @@ export default function LandingPage() {
             <section className="max-w-7xl mx-auto px-4 py-8 border-t border-gray-100">
                 <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 sm:mb-12 gap-6">
                     <div>
-                        <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight mb-2">
-                            {activeCategory ? `Chuyên gia ${activeCategory}` : 'Tất cả chuyên gia'}
+                        <h2 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tight mb-2 uppercase">
+                            {activeCategory ? `Doanh nghiệp ${activeCategory}` : 'Doanh nghiệp nổi bật'}
                         </h2>
                         <p className="text-gray-500 font-bold uppercase tracking-widest text-xs flex items-center gap-2">
                             <Users className="w-4 h-4" />
-                            {profiles.length} Card Visit đang hiển thị
+                            {profiles.length} Doanh nghiệp & Chuyên gia đã xác thực
                         </p>
                     </div>
                     <Link href="/hub" className="w-full sm:w-auto">
