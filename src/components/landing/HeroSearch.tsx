@@ -15,7 +15,7 @@ export function HeroSearch() {
         e.preventDefault()
         if (query.trim()) {
             // Navigate to hub with search query
-            router.push(`/hub?q=${encodeURIComponent(query.trim())}`)
+            router.push(`/explore?q=${encodeURIComponent(query.trim())}`)
         }
     }
 

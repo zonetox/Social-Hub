@@ -47,7 +47,7 @@ export function SmartSearch({ isOpen, onClose }: SmartSearchProps) {
         { id: 'edit-profile', name: 'Chỉnh sửa Profile', icon: User, href: '/profile' },
         { id: 'settings', name: 'Cài đặt tài khoản', icon: Settings, href: '/settings' },
         { id: 'contacts', name: 'Quản lý danh bạ', icon: Folder, href: '/contacts' },
-        { id: 'ranking', name: 'Bảng xếp hạng', icon: Sparkles, href: '/hub' },
+        { id: 'ranking', name: 'Bảng xếp hạng', icon: Sparkles, href: '/explore' },
     ]
 
     useEffect(() => {
@@ -262,7 +262,7 @@ export function SmartSearch({ isOpen, onClose }: SmartSearchProps) {
                                             {results.profiles.map((profile) => (
                                                 <button
                                                     key={profile.id}
-                                                    onClick={() => handleSelection(`/hub/${profile.slug}`, query)}
+                                                    onClick={() => handleSelection(`/explore/${profile.slug}`, query)}
                                                     className="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition-colors group w-full text-left"
                                                 >
                                                     <div className="w-12 h-12 rounded-xl overflow-hidden shadow-sm border border-gray-100">

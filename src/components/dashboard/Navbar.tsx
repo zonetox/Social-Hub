@@ -43,7 +43,7 @@ export function Navbar() {
     }, [])
 
     const mainNavigation = [
-        { name: 'Hub', href: '/hub', icon: Home },
+        { name: 'Khám phá', href: '/explore', icon: Home },
         { name: 'Contacts', href: '/contacts', icon: Users },
     ]
 

@@ -65,7 +65,7 @@ export function LoginForm() {
             router.refresh()
             // Small delay to ensure AuthContext catches the state change event
             setTimeout(() => {
-                router.push('/hub')
+                router.push('/dashboard/roi')
             }, 100)
         } catch (error: any) {
             setServerError(error.message || 'Invalid email or password')

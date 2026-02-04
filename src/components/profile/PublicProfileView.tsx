@@ -224,7 +224,7 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
                 <div className="glass px-6 py-3 rounded-2xl flex items-center justify-between border-white/40 shadow-2xl"
                     style={{ borderRadius: theme?.borderRadius }}
                 >
-                    <a href="/hub" className="flex items-center gap-2 group">
+                    <a href="/explore" className="flex items-center gap-2 group">
                         <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12"
                             style={{ backgroundColor: theme?.primaryColor || '#6366f1' }}
                         >

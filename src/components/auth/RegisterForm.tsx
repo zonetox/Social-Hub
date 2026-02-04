@@ -107,7 +107,7 @@ export function RegisterForm() {
 
             // User record confirmed, safe to redirect
             router.refresh()
-            router.push('/hub')
+            router.push('/explore')
         } catch (error: any) {
             console.error('Registration error:', error)
             setServerError(error.message || 'Failed to create account')

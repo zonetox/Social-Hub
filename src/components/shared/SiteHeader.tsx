@@ -27,7 +27,7 @@ export function SiteHeader() {
 
     const navigation = [
         { name: 'Trang chủ', href: '/' },
-        { name: 'Khám phá', href: '/hub' },
+        { name: 'Khám phá', href: '/explore' },
         { name: 'Nhận báo giá', href: '/requests/create' },
     ]
 
