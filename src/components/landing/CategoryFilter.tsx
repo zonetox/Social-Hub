@@ -147,13 +147,10 @@ export function CategoryFilter({ onCategorySelect, activeCategory }: CategoryFil
                             </div>
                             <div className="w-full">
                                 <span className="font-bold text-sm block mb-1 truncate w-full">{cat.name}</span>
-                                <div className="flex items-center gap-3 text-[10px] font-semibold opacity-80">
-                                    <span className="flex items-center gap-1">
-                                        <Briefcase className="w-3 h-3" /> {stat.businesses}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <Store className="w-3 h-3" /> {stat.requests}
-                                    </span>
+                                <div className="flex items-center gap-1 text-[11px] font-medium text-gray-500">
+                                    <span>({stat.businesses} DN</span>
+                                    <span className="mx-0.5">·</span>
+                                    <span>{stat.requests} yêu cầu)</span>
                                 </div>
                             </div>
                         </button>
