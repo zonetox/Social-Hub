@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Logo } from '@/components/shared/Logo'
 import { Button } from '@/components/ui/Button'
 import { UserCard } from '@/components/dashboard/UserCard'
+import { SiteHeader } from '@/components/shared/SiteHeader'
 import { HeroSearch } from '@/components/landing/HeroSearch'
 import { HeroSlider } from '@/components/landing/HeroSlider'
 import { CategoryFilter } from '@/components/landing/CategoryFilter'
@@ -113,21 +114,7 @@ export default function LandingPage() {
     return (
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Premium Navigation */}
-            <nav className="glass sticky top-0 z-50 border-b border-white/20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-                    <Logo size="sm" />
-                    <div className="flex items-center gap-4">
-                        <Link href="/login" className="hidden sm:block">
-                            <Button variant="ghost" className="font-bold text-gray-600">Đăng nhập</Button>
-                        </Link>
-                        <Link href="/register">
-                            <Button className="premium-gradient border-none font-black shadow-xl shadow-primary-500/10 hover:scale-105 transition-transform px-4 sm:px-8 h-10 sm:h-12 text-sm sm:text-base">
-                                Tham gia ngay
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
-            </nav>
+            <SiteHeader />
 
             {/* Hero Slider Section */}
             <HeroSlider />
