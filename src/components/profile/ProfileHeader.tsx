@@ -293,7 +293,13 @@ export function ProfileHeader({ profile, onUpdate }: ProfileHeaderProps) {
                                     className="flex items-center gap-1 text-primary-600 hover:text-primary-700"
                                 >
                                     <Link2 className="w-4 h-4" />
-                                    {new URL(profile.website).hostname}
+                                    {(() => {
+                                        try {
+                                            return new URL(profile.website).hostname
+                                        } catch {
+                                            return profile.website
+                                        }
+                                    })()}
                                 </a>
                             )}
                             <div className="flex items-center gap-1">
