@@ -123,16 +123,26 @@ export default function BusinessOIDashboard() {
             )}
 
             {/* Insight Section (Placeholder for future) */}
-            <div className="mt-8 bg-gradient-to-r from-primary-50 to-indigo-50 rounded-2xl p-6 border border-primary-100">
-                <h3 className="font-bold text-primary-900 mb-2 flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-amber-500 fill-current" />
-                    Mẹo tăng trưởng
-                </h3>
-                <ul className="space-y-2 text-sm text-primary-800">
-                    <li>• Nâng cấp hồ sơ VIP để hiển thị nổi bật hơn trước khách hàng.</li>
-                    <li>• Phản hồi báo giá nhanh trong vòng 1 giờ để tăng tỷ lệ chốt đơn.</li>
-                    <li>• Cập nhật Portfolio thường xuyên để thu hút nhiều lượt xem hơn.</li>
-                </ul>
+            {/* Upgrade Encouragement */}
+            <div className="mt-8 bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500 rounded-full blur-[100px] opacity-20 -mr-16 -mt-16"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-amber-400 fill-current" />
+                            Tăng tốc hiệu quả kinh doanh
+                        </h3>
+                        <p className="text-gray-300 max-w-xl">
+                            Nâng cấp lên gói <span className="text-white font-bold">Gold Membership</span> để tiếp cận không giới hạn yêu cầu, ghim hồ sơ lên đầu trang tìm kiếm và xem báo cáo chi tiết.
+                        </p>
+                    </div>
+                    <a href="/pricing">
+                        <button className="bg-white text-gray-900 px-6 py-3 rounded-xl font-black hover:scale-105 transition-transform shadow-lg shadow-white/10">
+                            Nâng cấp ngay
+                        </button>
+                    </a>
+                </div>
             </div>
         </div>
     )

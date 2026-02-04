@@ -180,40 +180,32 @@ export default function MyOffersPage() {
 
     return (
         <div className="max-w-5xl mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-                <div>
-                    <h1 className="text-2xl font-black text-gray-900">Báo giá của bạn</h1>
-                    <p className="text-gray-500">Theo dõi trạng thái các báo giá đã gửi</p>
-                </div>
+            <div className="mb-8">
+                <h1 className="text-2xl font-black text-gray-900">Báo giá của tôi</h1>
+                <p className="text-gray-500">Theo dõi trạng thái các báo giá đã gửi</p>
+            </div>
 
-                {/* Quota Widget - Compact */}
-                <div className="bg-white px-5 py-3 rounded-xl border border-gray-200 shadow-sm flex items-center gap-6 w-full md:w-auto">
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                            <Zap className="w-3 h-3 text-amber-500 fill-current" />
-                            Quota tháng
-                        </span>
-                        <div className="flex items-end gap-2">
-                            <span className="text-lg font-black text-gray-900 leading-none">{quota.used}/{quota.limit}</span>
+            {/* Upsell Banner if Quota Exceeded or Near Limit */}
+            {(quota.limit > 0 && quota.used >= quota.limit) && (
+                <div className="mb-8 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                    <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            <Zap className="w-5 h-5 text-amber-600 fill-current" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-gray-900 text-lg">Bạn đã dùng hết lượt báo giá tháng này</h3>
+                            <p className="text-gray-600 text-sm mt-1">
+                                Nâng cấp gói Membership để mở khóa không giới hạn lượt báo giá và tiếp cận nhiều khách hàng hơn.
+                            </p>
                         </div>
                     </div>
-                    <div className="h-8 w-px bg-gray-100 mx-2 hidden md:block"></div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1">
-                            <PlusCircle className="w-3 h-3 text-green-500" />
-                            Credit
-                        </span>
-                        <span className="text-lg font-black text-gray-900 leading-none">{quota.credits}</span>
-                    </div>
-                    <Button
-                        size="sm" variant="ghost"
-                        className="ml-auto text-primary-600 hover:bg-primary-50 h-8"
-                        onClick={() => router.push('/pricing')}
-                    >
-                        Mua thêm
-                    </Button>
+                    <Link href="/pricing">
+                        <Button className="premium-gradient border-none shadow-lg whitespace-nowrap">
+                            Nâng cấp ngay
+                        </Button>
+                    </Link>
                 </div>
-            </div>
+            )}
 
             {groupedOffers.length === 0 ? (
                 <div className="space-y-8">
