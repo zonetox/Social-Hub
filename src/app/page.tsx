@@ -10,16 +10,18 @@ import { CategoryFilter } from '@/components/landing/CategoryFilter'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import type { Profile } from '@/types/user.types'
 import Link from 'next/link'
-import { Sparkles, ArrowRight, AppWindow, Users } from 'lucide-react'
+import { Sparkles, ArrowRight, AppWindow, Users, Clock, Briefcase } from 'lucide-react'
 
 export default function LandingPage() {
     const [profiles, setProfiles] = useState<Profile[]>([])
+    const [requests, setRequests] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [activeCategory, setActiveCategory] = useState<string | null>(null)
     const supabase = createClient()
 
     useEffect(() => {
         fetchProfiles()
+        fetchRequests()
     }, [activeCategory])
 
     const fetchProfiles = async () => {
@@ -85,6 +87,28 @@ export default function LandingPage() {
         }
     }
 
+    const fetchRequests = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('service_requests')
+                .select(`
+                    id,
+                    title,
+                    created_at,
+                    status,
+                    budget,
+                    category:profile_categories(name)
+                `)
+                .eq('status', 'open')
+                .order('created_at', { ascending: false })
+                .limit(8)
+
+            if (data) setRequests(data)
+        } catch (error) {
+            console.error('Error fetching requests:', error)
+        }
+    }
+
     return (
         <div className="min-h-screen bg-[#F8FAFC]">
             {/* Premium Navigation */}
@@ -133,8 +157,61 @@ export default function LandingPage() {
                 onCategorySelect={setActiveCategory}
             />
 
+            {/* Latest Requests Section - NEW */}
+            {!activeCategory && requests.length > 0 && (
+                <section className="max-w-7xl mx-auto px-4 py-8 mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                                <Briefcase className="w-6 h-6 text-amber-500 fill-current" />
+                                Cơ hội việc làm mới
+                            </h2>
+                            <p className="text-gray-500 text-sm font-medium mt-1">Các dự án đang tìm kiếm chuyên gia</p>
+                        </div>
+                        <Link href="/requests">
+                            <Button variant="ghost" className="text-primary-600 hover:bg-primary-50 font-bold group">
+                                Xem tất cả <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {requests.map((req: any) => (
+                            <Link key={req.id} href={`/requests/${req.id}`} className="block h-full">
+                                <div className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 h-full flex flex-col relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-primary-50 to-white -mr-8 -mt-8 rounded-full z-0 group-hover:scale-150 transition-transform duration-500" />
+
+                                    <div className="relative z-10 flex items-start justify-between mb-3">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary-700 bg-primary-50 px-2.5 py-1 rounded-lg">
+                                            {req.category?.name || 'Chung'}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded-lg flex items-center gap-1">
+                                            <Clock className="w-3 h-3" />
+                                            {new Date(req.created_at).toLocaleDateString('vi-VN')}
+                                        </span>
+                                    </div>
+
+                                    <h3 className="font-bold text-gray-900 leading-snug mb-3 line-clamp-2 group-hover:text-primary-600 transition-colors">
+                                        {req.title}
+                                    </h3>
+
+                                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                                        <span className="text-sm font-bold text-gray-900">
+                                            {req.budget ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(req.budget) : 'Thương lượng'}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-white bg-primary-600 px-3 py-1.5 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all shadow-lg shadow-primary-500/20">
+                                            Ứng tuyển
+                                        </span>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
+
             {/* Main Directory Grid */}
-            <section className="max-w-7xl mx-auto px-4 py-20">
+            <section className="max-w-7xl mx-auto px-4 py-8 border-t border-gray-100">
                 <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 sm:mb-12 gap-6">
                     <div>
                         <h2 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight mb-2">
