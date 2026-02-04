@@ -133,7 +133,7 @@ export default function OpportunitiesPage() {
                                 <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                                     <div className="flex-1">
                                         <div className="flex items-center gap-2 mb-2">
-                                            <Badge variant="secondary" className="bg-primary-50 text-primary-700 border-primary-100">
+                                            <Badge variant="default" className="bg-primary-50 text-primary-700 border-primary-100 border font-normal">
                                                 {req.category?.name || 'Chung'}
                                             </Badge>
                                             <span className="text-xs text-gray-400 font-medium flex items-center gap-1">

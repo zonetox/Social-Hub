@@ -36,11 +36,12 @@ export async function getBusinessROIMetricsInternal(
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
     const startDate = timeRange === 'month' ? startOfMonth : '1970-01-01'
 
-    // 2. Count Request Opportunities (In same Category)
+    // 2. Count Request Opportunities (In same Category & Open)
     const { count: opportunities } = await supabase
         .from('service_requests')
         .select('*', { count: 'exact', head: true })
         .eq('category_id', userProfile.category_id)
+        .eq('status', 'open') // Sync with Frontend "Opportunities" view
         .gte('created_at', startDate)
 
     // 3. Count Offers Sent
