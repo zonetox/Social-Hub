@@ -1,4 +1,4 @@
--- Fix creator_cards_view to avoid filtering out users without subscriptions
+-- Add missing fields to creator_cards_view for landing page
 CREATE OR REPLACE VIEW public.creator_cards_view AS
 SELECT p.id AS profile_id,
     p.user_id,
@@ -36,6 +36,6 @@ FROM public.profiles p
     AND us.expires_at > NOW()
     LEFT JOIN public.subscription_plans sp ON us.plan_id = sp.id
 WHERE p.is_public = true;
--- Grant permissions again just in case
+-- Grant permissions
 GRANT SELECT ON public.creator_cards_view TO authenticated;
 GRANT SELECT ON public.creator_cards_view TO anon;
