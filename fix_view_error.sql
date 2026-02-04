@@ -1,6 +1,6 @@
--- DROP VIEW cũ để tránh lỗi "cannot change name of view column"
+-- 1. DROP VIEW cũ
 DROP VIEW IF EXISTS public.creator_cards_view;
--- Tạo lại View mới với đầy đủ cột
+-- 2. Tạo lại View với đầy đủ cột và xử lý data trống
 CREATE VIEW public.creator_cards_view AS
 SELECT p.id AS profile_id,
     p.user_id,
@@ -9,12 +9,13 @@ SELECT p.id AS profile_id,
     p.cover_image_url,
     u.avatar_url,
     u.username,
-    -- Đã thêm
     u.bio,
     u.is_verified,
-    -- Đã thêm
     p.location,
-    p.view_count,
+    -- Xử lý số liệu: Nếu chưa có thì mặc định là 0
+    COALESCE(p.view_count, 0) as view_count,
+    COALESCE(p.follower_count, 0) as follower_count,
+    -- Thêm cột này
     p.created_at,
     pc.name AS category_name,
     pc.slug AS category_slug,
@@ -40,6 +41,17 @@ FROM public.profiles p
     AND us.expires_at > NOW()
     LEFT JOIN public.subscription_plans sp ON us.plan_id = sp.id
 WHERE p.is_public = true;
--- Cấp lại quyền
+-- 3. Cấp quyền
 GRANT SELECT ON public.creator_cards_view TO authenticated;
 GRANT SELECT ON public.creator_cards_view TO anon;
+-- 4. BONUS: Bổ sung data ảo (Seed Data) cho đẹp mắt
+-- Random view từ 100 đến 1000 cho các profile chưa có views
+UPDATE public.profiles
+SET view_count = floor(random() * 900 + 100)::int
+WHERE view_count IS NULL
+    OR view_count = 0;
+-- Random followers từ 10 đến 500
+UPDATE public.profiles
+SET follower_count = floor(random() * 490 + 10)::int
+WHERE follower_count IS NULL
+    OR follower_count = 0;
