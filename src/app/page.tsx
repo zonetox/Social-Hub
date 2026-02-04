@@ -6,6 +6,7 @@ import { Logo } from '@/components/shared/Logo'
 import { Button } from '@/components/ui/Button'
 import { UserCard } from '@/components/dashboard/UserCard'
 import { HeroSearch } from '@/components/landing/HeroSearch'
+import { HeroSlider } from '@/components/landing/HeroSlider'
 import { CategoryFilter } from '@/components/landing/CategoryFilter'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import type { Profile } from '@/types/user.types'
@@ -128,28 +129,8 @@ export default function LandingPage() {
                 </div>
             </nav>
 
-            {/* Hero & Chat Search Section */}
-            <section className="relative pt-20 pb-16 overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[800px] bg-primary-500/5 blur-[150px] rounded-full -z-10 animate-pulse" />
-
-                <div className="max-w-7xl mx-auto text-center px-4">
-                    <div className="inline-flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full glass border-white/40 text-primary-600 text-[10px] sm:text-sm font-black mb-6 sm:mb-8 animate-float shadow-xl shadow-primary-500/5">
-                        <Sparkles className="w-5 h-5" />
-                        DANH BẠ CARD VISIT THÔNG MINH
-                    </div>
-
-                    <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-gray-900 mb-6 sm:mb-8 tracking-tighter leading-[1.1] sm:leading-[0.9]">
-                        Kết Nối <span className="text-transparent bg-clip-text premium-gradient">Mọi Lĩnh Vực</span><br className="hidden sm:block" />
-                        Trong Tầm Tay
-                    </h1>
-
-                    <p className="text-base sm:text-lg md:text-2xl text-gray-500 mb-10 sm:mb-12 max-w-2xl mx-auto font-medium leading-relaxed">
-                        Tìm kiếm đối tác, chuyên gia và dịch vụ thông qua hệ thống thẻ VISIT kỹ thuật số thế hệ mới.
-                    </p>
-
-                    <HeroSearch />
-                </div>
-            </section>
+            {/* Hero Slider Section */}
+            <HeroSlider />
 
             {/* Category Filter */}
             <CategoryFilter
