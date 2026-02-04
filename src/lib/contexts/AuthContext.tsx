@@ -117,13 +117,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         )
 
         // As a fallback, ensure loading is set to false after a timeout 
-        // INCREASED to 20s for slow connections
+        // Reduced to 5s to prevent infinite loading perception
         const timeout = setTimeout(() => {
             if (mounted && loadingRef.current) {
-                console.warn('[Auth] Initialization timed out after 20s, forcing loading to false')
+                console.warn('[Auth] Initialization timed out after 5s, forcing loading to false')
                 setLoading(false)
             }
-        }, 20000)
+        }, 5000)
 
         return () => {
             mounted = false

@@ -16,8 +16,17 @@ export function useProfile(userId?: string) {
             return
         }
 
+        let timeoutId: NodeJS.Timeout
+
         const fetchProfile = async () => {
             try {
+                // Set a timeout to prevent infinite loading
+                timeoutId = setTimeout(() => {
+                    console.warn('[useProfile] Query timeout after 10s')
+                    setError('Profile loading timed out')
+                    setLoading(false)
+                }, 10000)
+
                 const { data, error } = await supabase
                     .from('profiles')
                     .select(`
@@ -27,6 +36,8 @@ export function useProfile(userId?: string) {
           `)
                     .eq('user_id', userId)
                     .maybeSingle() as any
+
+                clearTimeout(timeoutId)
 
                 if (error) throw error
 
@@ -39,13 +50,19 @@ export function useProfile(userId?: string) {
 
                 setProfile(data)
             } catch (err: any) {
+                clearTimeout(timeoutId)
                 setError(err.message)
+                console.error('[useProfile] Error:', err)
             } finally {
                 setLoading(false)
             }
         }
 
         fetchProfile()
+
+        return () => {
+            clearTimeout(timeoutId)
+        }
     }, [userId])
 
     const refreshProfile = async () => {
