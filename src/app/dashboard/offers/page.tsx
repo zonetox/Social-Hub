@@ -250,11 +250,11 @@ export default function MyOffersPage() {
                                 >
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-2">
-                                            <Badge variant={group.requestStatus === 'open' ? 'success' : 'secondary'} className="uppercase text-[10px] tracking-wider px-2 py-0.5">
+                                            <Badge variant={group.requestStatus === 'open' ? 'success' : 'default'} className="uppercase text-[10px] tracking-wider px-2 py-0.5">
                                                 {group.requestStatus === 'open' ? 'Đang mở' : 'Đã đóng'}
                                             </Badge>
                                             {group.categoryName && (
-                                                <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200 font-normal">
+                                                <Badge variant="default" className="text-[10px] text-gray-500 border border-gray-200 bg-transparent font-normal">
                                                     {group.categoryName}
                                                 </Badge>
                                             )}

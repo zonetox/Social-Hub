@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { Card } from '@/components/ui/Card'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { TrendingUp, Send, CheckCircle, Filter } from 'lucide-react'
+import { TrendingUp, Send, CheckCircle, Filter, Info } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function BusinessOIDashboard() {
@@ -53,7 +53,7 @@ export default function BusinessOIDashboard() {
             desc: 'Số lượng báo giá bạn đã gửi đi'
         },
         {
-            label: 'Yêu cầu đã đóng',
+            label: 'Yêu cầu đã kết thúc',
             value: metrics.requestsClosed,
             icon: CheckCircle,
             color: 'text-green-500',
@@ -66,7 +66,16 @@ export default function BusinessOIDashboard() {
         <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-black text-gray-900">Hiệu Quả Kinh Doanh (ROI)</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-2xl font-black text-gray-900">Hiệu quả kinh doanh</h1>
+                        <div className="group relative">
+                            <Info className="w-5 h-5 text-gray-400 cursor-help" />
+                            <div className="absolute left-full ml-2 top-0 w-64 p-3 bg-gray-900 text-white text-xs rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                                <p className="font-bold mb-1">Đây không phải là doanh thu</p>
+                                <p>Chỉ số này đo lường hiệu quả tiếp cận và kết nối của bạn trên nền tảng.</p>
+                            </div>
+                        </div>
+                    </div>
                     <p className="text-gray-500">Theo dõi hiệu suất và cơ hội của bạn trên SocialHub</p>
                 </div>
 

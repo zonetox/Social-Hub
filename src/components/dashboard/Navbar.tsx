@@ -54,7 +54,7 @@ export function Navbar() {
 
     const accountNavigation = [
         { name: 'Profile', href: '/profile', icon: User },
-        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        { name: 'Hiệu quả KD', href: '/dashboard/roi', icon: BarChart3 },
         { name: 'Settings', href: '/settings', icon: Settings },
     ]
 
