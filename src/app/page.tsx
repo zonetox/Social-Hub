@@ -149,27 +149,22 @@ export default function LandingPage() {
                                 <div className="group bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-lg hover:border-primary-200 transition-all duration-300 h-full flex flex-col relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-primary-50 to-white -mr-8 -mt-8 rounded-full z-0 group-hover:scale-150 transition-transform duration-500" />
 
-                                    <div className="relative z-10 flex items-start justify-between mb-3">
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary-700 bg-primary-50 px-2.5 py-1 rounded-lg">
-                                            {req.category?.name || 'Chung'}
-                                        </span>
-                                        <span className="text-[10px] text-gray-400 font-bold bg-gray-50 px-2 py-1 rounded-lg flex items-center gap-1">
-                                            <Clock className="w-3 h-3" />
-                                            {new Date(req.created_at).toLocaleDateString('vi-VN')}
-                                        </span>
-                                    </div>
+                                    <div className="relative z-10 flex flex-col h-full">
+                                        <h3 className="font-bold text-gray-900 leading-snug mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors text-base">
+                                            {req.title}
+                                        </h3>
 
-                                    <h3 className="font-bold text-gray-900 leading-snug mb-3 line-clamp-2 group-hover:text-primary-600 transition-colors">
-                                        {req.title}
-                                    </h3>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500 font-medium mb-4">
+                                            <span className="text-primary-700 font-bold">
+                                                {req.category?.name || 'Chung'}
+                                            </span>
+                                            <span>·</span>
+                                            <span>{new Date(req.created_at).toLocaleDateString('vi-VN')}</span>
+                                        </div>
 
-                                    <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
-                                        <span className="text-sm font-bold text-gray-900">
-                                            {req.budget ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(req.budget) : 'Thương lượng'}
-                                        </span>
-                                        <span className="text-[10px] font-bold text-white bg-primary-600 px-3 py-1.5 rounded-full opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all shadow-lg shadow-primary-500/20">
-                                            Ứng tuyển
-                                        </span>
+                                        <div className="mt-auto pt-3 border-t border-gray-50 flex items-center text-primary-600 font-bold text-xs group/btn">
+                                            Xem chi tiết <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                                        </div>
                                     </div>
                                 </div>
                             </Link>
