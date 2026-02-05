@@ -11,33 +11,19 @@ import { Card } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import {
-    User,
-    Mail,
-    Lock,
-    Globe,
-    Bell,
-    Shield,
-    Trash2,
-    Eye,
-    EyeOff,
-    AlertCircle,
-    CheckCircle,
-    Upload
-} from 'lucide-react'
+import { DashboardLoadingSkeleton, DashboardErrorState } from '@/components/dashboard/DashboardStates'
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth()
-    const { profile, loading: profileLoading, refreshProfile } = useProfile(user?.id)
+    const { profile, loading: profileLoading, error: profileError, refreshProfile } = useProfile(user?.id)
     const [activeTab, setActiveTab] = useState<'account' | 'profile' | 'privacy' | 'security'>('account')
 
     if (authLoading || profileLoading) {
-        return (
-            <div className="flex items-center justify-center py-20">
-                <LoadingSpinner size="lg" />
-            </div>
-        )
+        return <DashboardLoadingSkeleton />
+    }
+
+    if (profileError) {
+        return <DashboardErrorState message={profileError} onRetry={refreshProfile} />
     }
 
     if (!user) {

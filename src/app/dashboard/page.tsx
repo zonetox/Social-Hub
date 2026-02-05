@@ -7,7 +7,7 @@ import { useProfile } from '@/lib/hooks/useProfile'
 import { useSubscription } from '@/lib/hooks/useSubscription'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { DashboardLoadingSkeleton, DashboardErrorState } from '@/components/dashboard/DashboardStates'
 import {
     TrendingUp,
     Send,
@@ -24,8 +24,8 @@ import clsx from 'clsx'
 
 export default function DashboardOverviewPage() {
     const { user } = useAuth()
-    const { profile, loading: profileLoading } = useProfile(user?.id)
-    const { subscription, loading: subLoading } = useSubscription()
+    const { profile, loading: profileLoading, error: profileError } = useProfile(user?.id)
+    const { subscription, loading: subLoading, error: subError } = useSubscription()
 
     const [metrics, setMetrics] = useState({ opportunities: 0, offersSent: 0, requestsClosed: 0 })
     const [metricsLoading, setMetricsLoading] = useState(true)
@@ -34,13 +34,16 @@ export default function DashboardOverviewPage() {
         const fetchMetrics = async () => {
             if (!user) return
             try {
+                setMetricsLoading(true)
                 const response = await fetch('/api/analytics/roi', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ timeRange: 'month' })
                 })
-                const data = await response.json()
-                setMetrics(data)
+                if (response.ok) {
+                    const data = await response.json()
+                    setMetrics(data)
+                }
             } catch (error) {
                 console.error('Failed to fetch metrics:', error)
             } finally {
@@ -51,7 +54,11 @@ export default function DashboardOverviewPage() {
     }, [user])
 
     if (profileLoading || subLoading || metricsLoading) {
-        return <div className="flex justify-center py-20"><LoadingSpinner size="lg" /></div>
+        return <DashboardLoadingSkeleton />
+    }
+
+    if (profileError || subError) {
+        return <DashboardErrorState message={profileError || subError || 'Lỗi tải dữ liệu Dashboard'} onRetry={() => window.location.reload()} />
     }
 
     const stats = [

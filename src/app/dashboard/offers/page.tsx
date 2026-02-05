@@ -16,6 +16,8 @@ import { useRouter } from 'next/navigation'
 import type { RecommendedRequest } from '@/actions/recommendations'
 import { RecommendedRequests } from '@/components/dashboard/RecommendedRequests'
 
+import { DashboardLoadingSkeleton, DashboardErrorState, DashboardEmptyState } from '@/components/dashboard/DashboardStates'
+
 interface GroupedRequest {
     requestId: string
     requestTitle: string
@@ -33,6 +35,7 @@ export default function MyOffersPage() {
     const [groupedOffers, setGroupedOffers] = useState<GroupedRequest[]>([])
     const [recommendations, setRecommendations] = useState<RecommendedRequest[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [quota, setQuota] = useState({ used: 0, limit: 0, credits: 0 })
     const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set())
 
@@ -48,20 +51,30 @@ export default function MyOffersPage() {
         })
     }
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!user) return
+    const fetchData = async () => {
+        if (!user) return
 
+        setLoading(true)
+        setError(null)
+        try {
             // 1. Fetch Offers Summary
-            const { data: myProfiles } = await supabase.from('profiles').select('id').eq('user_id', user.id)
+            const { data: myProfiles, error: profileError } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('user_id', user.id)
+
+            if (profileError) throw profileError
+
             const myProfileIds = (myProfiles as any)?.map((p: any) => p.id) || []
 
             if (myProfileIds.length > 0) {
-                const { data: offersData, error } = await supabase
+                const { data: offersData, error: summaryError } = await supabase
                     .from('my_offers_summary')
                     .select('*')
                     .in('profile_id', myProfileIds)
                     .order('offered_at', { ascending: false })
+
+                if (summaryError) throw summaryError
 
                 if (offersData && offersData.length > 0) {
                     // Enrich with Category & CreatedAt from service_requests
@@ -130,14 +143,14 @@ export default function MyOffersPage() {
                 usedCount = count || 0
             }
 
-            // Get limit
+            // Get limit - Use maybeSingle to prevent crash if no sub found
             const { data: sub } = await supabase
                 .from('user_subscriptions')
                 .select(`*, plan:subscription_plans(features)`)
                 .eq('user_id', user.id)
                 .eq('status', 'active')
                 .gte('expires_at', new Date().toISOString())
-                .single()
+                .maybeSingle()
 
             const subscription = sub as any
             let limitCount = 0
@@ -145,14 +158,16 @@ export default function MyOffersPage() {
                 limitCount = subscription.plan.features.offer_quota_per_month || 0
             }
 
-            // Get Credits
+            // Get Credits - Use maybeSingle to prevent crash if no credits row
             const { data: creditData } = await supabase
                 .from('card_credits')
                 .select('amount')
                 .eq('user_id', user.id)
-                .single()
+                .maybeSingle()
 
             const credits = (creditData as any)?.amount || 0
+
+            setQuota({ used: usedCount, limit: limitCount, credits })
 
             // 3. Fetch Recommendations
             try {
@@ -161,20 +176,29 @@ export default function MyOffersPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ limit: 5 })
                 })
-                const recs = await recsRes.json()
-                setRecommendations(recs)
+                if (recsRes.ok) {
+                    const recs = await recsRes.json()
+                    setRecommendations(recs)
+                }
             } catch (err) {
-                console.error('Failed to load recommendations', err)
+                console.warn('Failed to load recommendations', err)
             }
 
-            setQuota({ used: usedCount, limit: limitCount, credits })
+        } catch (err: any) {
+            console.error('[MyOffersPage] Error fetching data:', err)
+            setError(err.message || 'Không thể tải dữ liệu báo giá.')
+        } finally {
             setLoading(false)
         }
+    }
 
+    useEffect(() => {
         fetchData()
     }, [user])
 
-    if (loading) return <div className="flex justify-center py-20"><LoadingSpinner /></div>
+    if (loading) return <DashboardLoadingSkeleton />
+
+    if (error) return <DashboardErrorState message={error} onRetry={fetchData} />
 
     const usagePercent = quota.limit > 0 ? Math.min((quota.used / quota.limit) * 100, 100) : 100
 
