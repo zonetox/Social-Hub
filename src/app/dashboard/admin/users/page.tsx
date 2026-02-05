@@ -65,7 +65,10 @@ export default function AdminUsersPage() {
         try {
             const { data, error } = await supabase
                 .from('users')
-                .select('*')
+                .select(`
+                    *,
+                    profile:profiles(slug)
+                `)
                 .order('created_at', { ascending: false })
 
             if (error) throw error
@@ -140,7 +143,7 @@ export default function AdminUsersPage() {
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">User Management</h1>
                     <p className="text-gray-600">Manage all users on the platform</p>
                 </div>
-                <Link href="/admin/users/bulk-import">
+                <Link href="/dashboard/admin/users/bulk-import">
                     <Button className="w-full md:w-auto">
                         <Upload className="w-4 h-4 mr-2" />
                         Bulk Import Profiles
@@ -280,7 +283,7 @@ export default function AdminUsersPage() {
                                                     />
                                                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
                                                         <button
-                                                            onClick={() => window.open(`/${user.username}`, '_blank')}
+                                                            onClick={() => window.open(`/${user.profile?.[0]?.slug || user.username}`, '_blank')}
                                                             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                                         >
                                                             <Eye className="w-4 h-4" />

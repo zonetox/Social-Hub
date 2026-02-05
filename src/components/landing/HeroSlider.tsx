@@ -18,13 +18,13 @@ const slides = [
         id: 2,
         image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&q=80',
         headline: 'Mở Rộng Mạng Lưới Kinh Doanh B2B',
-        sub: 'Tiếp cận hàng nghìn khách hàng tiềm năng thông qua danh thiếp số.'
+        sub: 'Tiếp cận hàng nghìn khách hàng tiềm năng thông qua danh thiếp số chuyên nghiệp.'
     },
     {
         id: 3,
         image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80',
-        headline: 'Nền Tảng Tuyển Dụng & Vận Hành Linh Hoạt',
-        sub: 'Đăng yêu cầu, nhận báo giá và triển khai công việc nhanh chóng.'
+        headline: 'Nền Tảng Yêu Cầu & Báo Giá Linh Hoạt',
+        sub: 'Đăng yêu cầu, nhận báo giá từ các nhà cung cấp uy tín trong vài phút.'
     }
 ]
 
@@ -39,7 +39,7 @@ export function HeroSlider() {
     }, [])
 
     return (
-        <section className="relative h-[600px] w-full overflow-hidden bg-gray-900 text-white">
+        <section className="relative h-[550px] sm:h-[650px] w-full overflow-hidden bg-gray-900 text-white">
             <AnimatePresence mode="wait">
                 <motion.div
                     key={current}
@@ -60,7 +60,7 @@ export function HeroSlider() {
             <div className="relative z-10 max-w-7xl mx-auto px-4 h-full flex flex-col justify-center items-center text-center">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-sm font-bold mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Nền tảng B2B Directory số 1 Việt Nam</span>
+                    <span>Nền tảng Directory Marketplace số 1 Việt Nam</span>
                 </div>
 
                 <h1 className="text-4xl sm:text-6xl font-black tracking-tight mb-6 max-w-4xl leading-tight">
@@ -71,14 +71,15 @@ export function HeroSlider() {
                     {slides[current].sub}
                 </p>
 
-                <div className="w-full max-w-2xl mb-8">
-                    <HeroSearch />
-                </div>
-
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                     <Link href="/requests/create">
-                        <Button size="lg" className="premium-gradient font-bold h-14 px-8 rounded-full shadow-xl hover:scale-105 transition-transform">
-                            Nhận tư vấn & Báo giá
+                        <Button size="lg" className="premium-gradient font-bold h-14 px-8 rounded-full shadow-xl hover:scale-105 transition-transform w-full sm:w-auto">
+                            Nhận tư vấn & báo giá
+                        </Button>
+                    </Link>
+                    <Link href="/explore">
+                        <Button size="lg" variant="outline" className="bg-white/10 backdrop-blur-md border-white/30 hover:bg-white/20 text-white font-bold h-14 px-8 rounded-full shadow-xl hover:scale-105 transition-transform w-full sm:w-auto">
+                            Khám phá doanh nghiệp
                         </Button>
                     </Link>
                 </div>

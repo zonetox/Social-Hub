@@ -136,7 +136,7 @@ export default function CardsPage() {
                         </div>
                     </div>
                     <p className="text-4xl font-black text-gray-900 mb-2">{cardBalance}</p>
-                    <Link href="/pricing" className="text-sm font-bold text-primary-700 hover:text-primary-800 flex items-center gap-1 group">
+                    <Link href="/dashboard/pricing" className="text-sm font-bold text-primary-700 hover:text-primary-800 flex items-center gap-1 group">
                         Buy more Credits
                         <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                     </Link>
@@ -293,11 +293,11 @@ export default function CardsPage() {
                                     No cards sent yet
                                 </h3>
                                 <p className="text-gray-500 max-w-sm mx-auto mb-8">
-                                    Go to the Hub and send your digital profile card to users you'd like to connect with.
+                                    Truy cập Khám phá và gửi danh thiếp kỹ thuật số của bạn cho những người bạn muốn kết nối.
                                 </p>
-                                <Link href="/hub">
+                                <Link href="/explore">
                                     <Button className="rounded-xl px-8 py-6 text-lg premium-gradient border-none">
-                                        Explore Hub
+                                        Khám phá
                                     </Button>
                                 </Link>
                             </Card>

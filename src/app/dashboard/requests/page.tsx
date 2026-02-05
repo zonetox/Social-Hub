@@ -102,7 +102,7 @@ export default function OpportunitiesPage() {
                     <p className="text-gray-500 mb-6 max-w-md mx-auto">
                         Vui lòng cập nhật danh mục ngành nghề trong hồ sơ của bạn để chúng tôi gợi ý các cơ hội phù hợp.
                     </p>
-                    <Link href="/profile">
+                    <Link href="/dashboard/profile">
                         <Button className="premium-gradient">Cập nhật hồ sơ ngay</Button>
                     </Link>
                 </div>

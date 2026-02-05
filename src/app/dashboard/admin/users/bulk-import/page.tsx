@@ -60,7 +60,7 @@ export default function BulkImportPage() {
         <div className="max-w-4xl mx-auto space-y-8">
             <div className="flex items-center gap-4">
                 <Link
-                    href="/admin/users"
+                    href="/dashboard/admin/users"
                     className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                 >
                     <ArrowLeft className="w-5 h-5 text-gray-500" />

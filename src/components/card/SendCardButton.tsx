@@ -132,7 +132,7 @@ export function SendCardButton({ receiverId, receiverName, profileId }: SendCard
                                         <p className="text-xs text-yellow-700 mt-1">
                                             You need at least 1 credit to send a card.
                                         </p>
-                                        <a href="/pricing" className="text-xs text-primary-600 font-bold hover:underline mt-2 block">
+                                        <a href="/dashboard/pricing" className="text-xs text-primary-600 font-bold hover:underline mt-2 block">
                                             Buy more credits now →
                                         </a>
                                     </div>

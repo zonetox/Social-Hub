@@ -137,7 +137,7 @@ export default function BusinessOIDashboard() {
                             Nâng cấp lên gói <span className="text-white font-bold">Gold Membership</span> để tiếp cận không giới hạn yêu cầu, ghim hồ sơ lên đầu trang tìm kiếm và xem báo cáo chi tiết.
                         </p>
                     </div>
-                    <a href="/pricing">
+                    <a href="/dashboard/pricing">
                         <button className="bg-white text-gray-900 px-6 py-3 rounded-xl font-black hover:scale-105 transition-transform shadow-lg shadow-white/10">
                             Nâng cấp ngay
                         </button>

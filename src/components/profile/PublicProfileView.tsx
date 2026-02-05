@@ -282,14 +282,14 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
                         )}
 
                         {isOwnProfile && (
-                            <a href="/profile">
+                            <a href="/dashboard/profile">
                                 <Button size="sm" className="border-none rounded-xl h-11 px-6 text-white font-bold shadow-lg"
                                     style={{
                                         borderRadius: theme?.borderRadius,
                                         backgroundColor: theme?.primaryColor || undefined
                                     }}
                                 >
-                                    Manage Hub
+                                    Quản lý Hồ sơ
                                 </Button>
                             </a>
                         )}

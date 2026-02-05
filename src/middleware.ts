@@ -15,13 +15,13 @@ export async function middleware(req: NextRequest) {
     const path = req.nextUrl.pathname
 
     // Protected routes
-    const protectedRoutes = ['/hub', '/profile', '/settings', '/contacts', '/analytics', '/cards', '/pricing', '/upgrade']
-    const adminRoutes = ['/admin']
+    const protectedRoutes = ['/dashboard']
+    const adminRoutes = ['/dashboard/admin']
     const authRoutes = ['/login', '/register']
 
     // Redirect authenticated users away from auth pages
     if (session && authRoutes.some(route => path.startsWith(route))) {
-        const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
+        const redirectRes = NextResponse.redirect(new URL('/dashboard/requests', req.url))
         // Copy cookies from original res to redirectRes
         res.cookies.getAll().forEach(cookie => {
             redirectRes.cookies.set(cookie.name, cookie.value)
@@ -49,14 +49,14 @@ export async function middleware(req: NextRequest) {
                 .maybeSingle() as any
 
             if (user?.role !== 'admin') {
-                const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
+                const redirectRes = NextResponse.redirect(new URL('/dashboard/requests', req.url))
                 res.cookies.getAll().forEach(cookie => {
                     redirectRes.cookies.set(cookie.name, cookie.value)
                 })
                 return redirectRes
             }
         } catch (error) {
-            const redirectRes = NextResponse.redirect(new URL('/hub', req.url))
+            const redirectRes = NextResponse.redirect(new URL('/dashboard/requests', req.url))
             res.cookies.getAll().forEach(cookie => {
                 redirectRes.cookies.set(cookie.name, cookie.value)
             })

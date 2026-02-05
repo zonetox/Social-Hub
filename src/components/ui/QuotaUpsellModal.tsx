@@ -106,7 +106,7 @@ export function QuotaUpsellModal({ isOpen, onClose, quota, used, title = "Bạn 
                                     </div>
 
                                     {/* Action */}
-                                    <Link href="/pricing" className="block">
+                                    <Link href="/dashboard/pricing" className="block">
                                         <Button
                                             size="lg"
                                             className="w-full h-14 text-lg font-bold premium-gradient border-none shadow-xl hover:shadow-2xl shadow-amber-500/20"

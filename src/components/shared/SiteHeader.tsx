@@ -28,7 +28,8 @@ export function SiteHeader() {
     const navigation = [
         { name: 'Trang chủ', href: '/' },
         { name: 'Khám phá', href: '/explore' },
-        { name: 'Nhận báo giá', href: '/requests/create' },
+        { name: 'Yêu cầu', href: '/requests' },
+        { name: 'Bảng giá', href: '/dashboard/pricing' },
     ]
 
     const handleSignOut = async () => {
@@ -99,20 +100,20 @@ export function SiteHeader() {
                                                     Dashboard
                                                 </Link>
                                                 <Link
-                                                    href="/profile"
+                                                    href="/dashboard/profile"
                                                     className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                                                     onClick={() => setIsProfileMenuOpen(false)}
                                                 >
-                                                    <Building2 className="w-4 h-4 text-gray-400" />
-                                                    Hồ sơ doanh nghiệp
+                                                    <User className="w-4 h-4 text-gray-400" />
+                                                    Hồ sơ của tôi
                                                 </Link>
                                                 <Link
-                                                    href="/pricing"
+                                                    href="/dashboard/pricing"
                                                     className="flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
                                                     onClick={() => setIsProfileMenuOpen(false)}
                                                 >
                                                     <Wallet className="w-4 h-4 text-gray-400" />
-                                                    Gói & Credits
+                                                    Gói dịch vụ / Billing
                                                 </Link>
                                             </div>
 
@@ -132,12 +133,15 @@ export function SiteHeader() {
                         ) : (
                             // Not Logged In State
                             <div className="flex items-center gap-2 sm:gap-4">
-                                <Link href="/login" className="hidden sm:block">
-                                    <Button variant="ghost" className="font-bold text-gray-600">Đăng nhập</Button>
+                                <Link href="/login">
+                                    <Button variant="ghost" className="hidden sm:block font-bold text-gray-600">Đăng nhập</Button>
                                 </Link>
                                 <Link href="/register">
+                                    <Button variant="outline" className="font-bold text-gray-900 border-gray-200">Đăng ký</Button>
+                                </Link>
+                                <Link href="/requests/create">
                                     <Button className="premium-gradient border-none font-black shadow-xl shadow-primary-500/10 hover:scale-105 transition-transform px-4 sm:px-8 h-10 sm:h-12 text-sm sm:text-base">
-                                        Tham gia ngay
+                                        Nhận tư vấn & báo giá
                                     </Button>
                                 </Link>
                             </div>
@@ -172,8 +176,11 @@ export function SiteHeader() {
                                     <Link href="/login" className="block text-center w-full py-3 text-sm font-bold text-gray-600 border border-gray-200 rounded-xl">
                                         Đăng nhập
                                     </Link>
-                                    <Link href="/register" className="block text-center w-full py-3 text-sm font-bold text-white premium-gradient rounded-xl shadow-lg shadow-primary-500/20">
-                                        Tham gia ngay
+                                    <Link href="/register" className="block text-center w-full py-3 text-sm font-bold text-gray-600 border border-gray-200 rounded-xl">
+                                        Đăng ký
+                                    </Link>
+                                    <Link href="/requests/create" className="block text-center w-full py-3 text-sm font-bold text-white premium-gradient rounded-xl shadow-lg shadow-primary-500/20">
+                                        Nhận tư vấn & báo giá
                                     </Link>
                                 </div>
                             )}

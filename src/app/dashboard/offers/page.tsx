@@ -199,7 +199,7 @@ export default function MyOffersPage() {
                             </p>
                         </div>
                     </div>
-                    <Link href="/pricing">
+                    <Link href="/dashboard/pricing">
                         <Button className="premium-gradient border-none shadow-lg whitespace-nowrap">
                             Nâng cấp ngay
                         </Button>

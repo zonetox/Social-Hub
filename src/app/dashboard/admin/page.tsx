@@ -199,7 +199,7 @@ export default function AdminPage() {
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <a
-                        href="/admin/users"
+                        href="/dashboard/admin/users"
                         className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
                     >
                         <Users className="w-6 h-6 text-primary-600 mb-2" />
@@ -210,7 +210,7 @@ export default function AdminPage() {
                     </a>
 
                     <a
-                        href="/admin/analytics"
+                        href="/dashboard/admin/analytics"
                         className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
                     >
                         <TrendingUp className="w-6 h-6 text-primary-600 mb-2" />
@@ -221,11 +221,11 @@ export default function AdminPage() {
                     </a>
 
                     <a
-                        href="/hub"
+                        href="/explore"
                         className="p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors"
                     >
                         <Globe className="w-6 h-6 text-primary-600 mb-2" />
-                        <h3 className="font-semibold text-gray-900 mb-1">View Hub</h3>
+                        <h3 className="font-semibold text-gray-900 mb-1">Xem Khám phá</h3>
                         <p className="text-sm text-gray-600">
                             Browse all public profiles on the platform
                         </p>

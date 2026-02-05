@@ -44,23 +44,22 @@ export function Navbar() {
 
     const mainNavigation = [
         { name: 'Khám phá', href: '/explore', icon: Home },
-        { name: 'Contacts', href: '/contacts', icon: Users },
+        { name: 'Contacts', href: '/dashboard/contacts', icon: Users },
     ]
 
     const moreNavigation = [
-        { name: 'My Cards', href: '/cards', icon: Inbox },
-        { name: 'Pricing', href: '/pricing', icon: Sparkles },
+        { name: 'My Cards', href: '/dashboard/cards', icon: Inbox },
     ]
 
     const accountNavigation = [
-        { name: 'Profile', href: '/profile', icon: User },
-        { name: 'Hiệu quả KD', href: '/dashboard/roi', icon: BarChart3 },
-        { name: 'Settings', href: '/settings', icon: Settings },
+        { name: 'Dashboard', href: '/dashboard/roi', icon: BarChart3 },
+        { name: 'Hồ sơ của tôi', href: '/dashboard/profile', icon: User },
+        { name: 'Gói dịch vụ / Billing', href: '/dashboard/pricing', icon: Sparkles },
     ]
 
     const adminNavigation = isAdmin ? [
-        { name: 'Admin Panel', href: '/admin', icon: Shield },
-        { name: 'Transactions', href: '/admin/payments', icon: DollarSign },
+        { name: 'Admin Panel', href: '/dashboard/admin', icon: Shield },
+        { name: 'Transactions', href: '/dashboard/admin/payments', icon: DollarSign },
     ] : []
 
     const handleSignOut = async () => {
@@ -158,15 +157,23 @@ export function Navbar() {
                                         </div>
 
                                         <div className="px-2 space-y-4">
-                                            {/* App Section */}
+                                            {/* Navigation Section */}
                                             <div>
-                                                <p className="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Ứng dụng & Tool</p>
+                                                <p className="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Navigation</p>
                                                 <div className="space-y-0.5">
-                                                    {moreNavigation.map(item => (
+                                                    <Link
+                                                        href="/requests/create"
+                                                        className="flex items-center gap-3 px-3 py-2 text-sm font-black text-primary-600 hover:bg-primary-50 rounded-xl transition-colors mb-2"
+                                                        onClick={() => setIsProfileMenuOpen(false)}
+                                                    >
+                                                        <Sparkles className="w-4 h-4 fill-current" />
+                                                        Nhận tư vấn & báo giá
+                                                    </Link>
+                                                    {mainNavigation.map(item => (
                                                         <Link
                                                             key={item.name}
                                                             href={item.href}
-                                                            className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-primary-50 hover:text-primary-700 rounded-xl transition-colors"
+                                                            className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
                                                             onClick={() => setIsProfileMenuOpen(false)}
                                                         >
                                                             <item.icon className="w-4 h-4" />
@@ -178,19 +185,27 @@ export function Navbar() {
 
                                             {/* Account Section */}
                                             <div>
-                                                <p className="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Cá nhân & Cài đặt</p>
+                                                <p className="px-3 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tài khoản & Quản lý</p>
                                                 <div className="space-y-0.5">
                                                     {accountNavigation.map(item => (
                                                         <Link
                                                             key={item.name}
                                                             href={item.href}
-                                                            className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-xl transition-colors"
+                                                            className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
                                                             onClick={() => setIsProfileMenuOpen(false)}
                                                         >
                                                             <item.icon className="w-4 h-4" />
                                                             {item.name}
                                                         </Link>
                                                     ))}
+                                                    <Link
+                                                        href="/dashboard/settings"
+                                                        className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 rounded-xl transition-colors"
+                                                        onClick={() => setIsProfileMenuOpen(false)}
+                                                    >
+                                                        <Settings className="w-4 h-4" />
+                                                        Cài đặt
+                                                    </Link>
                                                 </div>
                                             </div>
 
@@ -271,7 +286,7 @@ export function Navbar() {
 
             {/* Mobile Bottom Navigation - Visible only on small screens */}
             <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 px-6 py-3 z-50 flex justify-between items-center safe-area-inset-bottom shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-                {[...mainNavigation, ...moreNavigation.slice(0, 1), { name: 'Me', href: '/profile', icon: User }].map((item: any) => {
+                {[...mainNavigation, ...moreNavigation.slice(0, 1), { name: 'Me', href: '/dashboard/profile', icon: User }].map((item: any) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href
                     return (
@@ -292,6 +307,6 @@ export function Navbar() {
                 isOpen={isSearchOpen}
                 onClose={() => setIsSearchOpen(false)}
             />
-        </nav>
+        </nav >
     )
 }

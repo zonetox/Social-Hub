@@ -283,7 +283,7 @@ export function EditProfileModal({
                                 <p className="text-gray-600 mb-6 font-medium leading-relaxed">
                                     Tùy biến giao diện (màu sắc, font chữ, gradient backgrounds) chỉ dành cho thành viên Premium. Nâng cấp ngay để khẳng định phong cách riêng của bạn!
                                 </p>
-                                <a href="/cards">
+                                <a href="/dashboard/cards">
                                     <Button className="premium-gradient border-none shadow-xl hover:scale-105 active:scale-95 transition-all font-bold px-8">
                                         Nâng cấp Premium ngay
                                     </Button>
