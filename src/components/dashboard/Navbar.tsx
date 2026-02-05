@@ -52,7 +52,7 @@ export function Navbar() {
     ]
 
     const accountNavigation = [
-        { name: 'Dashboard', href: '/dashboard/roi', icon: BarChart3 },
+        { name: 'Dashboard', href: '/dashboard', icon: BarChart3 },
         { name: 'Hồ sơ của tôi', href: '/dashboard/profile', icon: User },
         { name: 'Gói dịch vụ / Billing', href: '/dashboard/pricing', icon: Sparkles },
     ]

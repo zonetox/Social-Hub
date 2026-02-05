@@ -21,7 +21,7 @@ export async function middleware(req: NextRequest) {
 
     // Redirect authenticated users away from auth pages
     if (session && authRoutes.some(route => path.startsWith(route))) {
-        const redirectRes = NextResponse.redirect(new URL('/dashboard/requests', req.url))
+        const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url))
         // Copy cookies from original res to redirectRes
         res.cookies.getAll().forEach(cookie => {
             redirectRes.cookies.set(cookie.name, cookie.value)
@@ -49,14 +49,14 @@ export async function middleware(req: NextRequest) {
                 .maybeSingle() as any
 
             if (user?.role !== 'admin') {
-                const redirectRes = NextResponse.redirect(new URL('/dashboard/requests', req.url))
+                const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url))
                 res.cookies.getAll().forEach(cookie => {
                     redirectRes.cookies.set(cookie.name, cookie.value)
                 })
                 return redirectRes
             }
         } catch (error) {
-            const redirectRes = NextResponse.redirect(new URL('/dashboard/requests', req.url))
+            const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url))
             res.cookies.getAll().forEach(cookie => {
                 redirectRes.cookies.set(cookie.name, cookie.value)
             })

@@ -208,109 +208,158 @@ export default function MyOffersPage() {
             )}
 
             {groupedOffers.length === 0 ? (
-                <div className="space-y-8">
-                    <div className="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <LayoutGrid className="w-8 h-8 text-gray-400" />
+                <div className="space-y-8 animate-in fade-in duration-700">
+                    <div className="text-center py-24 bg-white rounded-[3rem] border border-gray-100 shadow-sm">
+                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                            <LayoutGrid className="w-10 h-10 text-gray-300" />
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">Bạn chưa gửi báo giá nào</h3>
-                        <p className="text-gray-500 mb-6 max-w-md mx-auto">
-                            Hãy tìm kiếm các yêu cầu phù hợp với kỹ năng của bạn và bắt đầu chào giá ngay.
+                        <h3 className="text-2xl font-black text-gray-900 mb-2">Bạn chưa gửi báo giá nào</h3>
+                        <p className="text-gray-500 mb-10 max-w-md mx-auto font-medium">
+                            Hãy chủ động tìm kiếm các yêu cầu dịch vụ phù hợp để bắt đầu hành trình chinh phục khách hàng.
                         </p>
                         <Link href="/requests">
-                            <Button size="lg" className="premium-gradient shadow-lg shadow-primary-500/20">
-                                Tìm kiếm yêu cầu việc làm
+                            <Button size="lg" className="premium-gradient shadow-xl shadow-primary-500/20 px-10 rounded-2xl font-black">
+                                Khám phá cơ hội ngay
                             </Button>
                         </Link>
                     </div>
                     {recommendations.length > 0 && (
-                        <RecommendedRequests requests={recommendations} />
+                        <div className="pt-4 border-t border-gray-100">
+                            <RecommendedRequests requests={recommendations} />
+                        </div>
                     )}
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-8">
                     {/* List Grouped Requests */}
-                    {groupedOffers.map(group => {
+                    {groupedOffers.map((group, idx) => {
                         const isExpanded = expandedRequests.has(group.requestId)
+                        const isClosed = group.requestStatus === 'closed'
 
                         return (
-                            <div key={group.requestId} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
-                                {/* Header */}
+                            <div
+                                key={group.requestId}
+                                className={clsx(
+                                    "bg-white rounded-[2rem] border transition-all duration-500 overflow-hidden",
+                                    isExpanded ? "shadow-2xl border-primary-100 ring-4 ring-primary-50/50" : "border-gray-100 shadow-sm hover:shadow-lg",
+                                    isClosed && !isExpanded && "opacity-80 grayscale-[0.3]"
+                                )}
+                            >
+                                {/* Header - The Request Context */}
                                 <div
-                                    className="p-5 cursor-pointer flex flex-col md:flex-row gap-4 md:items-center justify-between bg-white hover:bg-gray-50/50 transition-colors"
+                                    className={clsx(
+                                        "p-6 cursor-pointer flex flex-col lg:flex-row gap-6 lg:items-center justify-between transition-colors relative",
+                                        isExpanded ? "bg-primary-50/30" : "bg-white hover:bg-gray-50/50"
+                                    )}
                                     onClick={() => toggleExpand(group.requestId)}
                                 >
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <Badge variant={group.requestStatus === 'open' ? 'success' : 'default'} className="uppercase text-[10px] tracking-wider px-2 py-0.5">
-                                                {group.requestStatus === 'open' ? 'Đang mở' : 'Đã đóng'}
-                                            </Badge>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                                            {isClosed ? (
+                                                <Badge variant="default" className="bg-gray-100 text-gray-500 border-gray-200 font-black px-3">
+                                                    ĐÃ ĐÓNG
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="success" className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black px-3">
+                                                    ĐANG MỞ
+                                                </Badge>
+                                            )}
                                             {group.categoryName && (
-                                                <Badge variant="default" className="text-[10px] text-gray-500 border border-gray-200 bg-transparent font-normal">
+                                                <Badge variant="default" className="text-[11px] text-primary-600 border-primary-100 bg-primary-50 px-3 font-black uppercase tracking-wider">
                                                     {group.categoryName}
                                                 </Badge>
                                             )}
+                                            <span className="text-[11px] font-bold text-gray-400 flex items-center gap-1 ml-1">
+                                                <Calendar className="w-3 h-3" />
+                                                Đăng {group.requestCreatedAt && formatDistanceToNow(new Date(group.requestCreatedAt), { addSuffix: true, locale: vi })}
+                                            </span>
                                         </div>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-1 leading-tight group-hover:text-primary-600 transition-colors">
+
+                                        <h3 className={clsx(
+                                            "text-xl font-black mb-2 leading-tight transition-colors truncate",
+                                            isExpanded ? "text-primary-700" : "text-gray-900"
+                                        )}>
                                             {group.requestTitle}
                                         </h3>
-                                        <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
-                                            <span className="flex items-center gap-1">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-primary-500"></div>
-                                                {group.offers.length} Báo giá của bạn
-                                            </span>
-                                            {group.requestCreatedAt && (
-                                                <span className="flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    {formatDistanceToNow(new Date(group.requestCreatedAt), { addSuffix: true, locale: vi })}
-                                                </span>
-                                            )}
+
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-[11px] font-black text-gray-600">
+                                                <Zap className="w-3 h-3 fill-current" />
+                                                {group.offers.length} BÁO GIÁ CỦA BẠN
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3 self-end md:self-center">
+                                    <div className="flex items-center gap-3 shrink-0">
                                         <Link href={`/requests/${group.requestId}`} onClick={(e) => e.stopPropagation()}>
-                                            <Button size="sm" variant={group.requestStatus === 'open' ? 'primary' : 'outline'} className="h-9">
-                                                {group.requestStatus === 'open' ? 'Xem yêu cầu' : 'Xem lịch sử'}
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-10 px-5 rounded-xl border-gray-200 font-black text-gray-600 hover:text-primary-600 hover:border-primary-200 transition-all flex items-center gap-2"
+                                            >
+                                                Xem yêu cầu
+                                                <ExternalLink className="w-3.5 h-3.5" />
                                             </Button>
                                         </Link>
-                                        <div className={clsx("p-2 rounded-full bg-gray-50 text-gray-500 transition-transform", isExpanded && "rotate-180")}>
+                                        <div className={clsx(
+                                            "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                                            isExpanded ? "bg-primary-600 text-white rotate-180" : "bg-gray-50 text-gray-400"
+                                        )}>
                                             <ChevronDown className="w-5 h-5" />
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Body - Offers List */}
+                                {/* Body - Offers Sub-list */}
                                 {isExpanded && (
-                                    <div className="border-t border-gray-100 bg-gray-50/30 p-4 sm:p-5 space-y-3 animation-slide-down">
-                                        <h4 className="text-xs font-bold text-gray-500 uppercase px-1">Lịch sử báo giá của bạn</h4>
+                                    <div className="border-t border-gray-100 bg-gray-50/30 p-4 lg:p-8 space-y-4 animate-in slide-in-from-top-4 duration-500">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="h-px bg-gray-200 flex-grow"></div>
+                                            <span className="text-[10px] font-black text-gray-400 tracking-[0.2em] uppercase">Chi tiết các báo giá</span>
+                                            <div className="h-px bg-gray-200 flex-grow"></div>
+                                        </div>
+
                                         {group.offers.map(offer => (
-                                            <div key={offer.id} className="bg-white p-4 rounded-xl border border-gray-200/60 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={clsx(
-                                                        "w-1 h-10 rounded-full",
-                                                        offer.status === 'accepted' ? "bg-green-500" :
-                                                            offer.status === 'rejected' ? "bg-red-500" : "bg-amber-400"
-                                                    )}></div>
-                                                    <div>
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <span className="font-mono font-bold text-gray-900">
-                                                                {offer.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(offer.price) : 'Thương lượng'}
-                                                            </span>
-                                                            <span className={clsx(
-                                                                "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                                                                offer.status === 'accepted' ? "bg-green-50 text-green-700 border-green-100" :
-                                                                    offer.status === 'rejected' ? "bg-red-50 text-red-700 border-red-100" : "bg-amber-50 text-amber-700 border-amber-100"
-                                                            )}>
-                                                                {offer.status === 'accepted' ? 'Được chọn' :
-                                                                    offer.status === 'rejected' ? 'Khách không chọn' : 'Đang chờ duyệt'}
-                                                            </span>
+                                            <div key={offer.id} className="bg-white p-5 rounded-2xl border border-gray-200/60 shadow-sm hover:border-primary-100 transition-all group/offer">
+                                                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                                                    <div className="flex gap-4">
+                                                        <div className={clsx(
+                                                            "w-1.5 h-auto rounded-full shrink-0",
+                                                            offer.status === 'accepted' ? "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" :
+                                                                offer.status === 'rejected' ? "bg-red-400" : "bg-amber-400"
+                                                        )}></div>
+                                                        <div className="min-w-0">
+                                                            <div className="flex flex-wrap items-center gap-3 mb-2">
+                                                                <span className="text-xl font-black text-gray-900">
+                                                                    {offer.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(offer.price) : 'Thỏa thuận'}
+                                                                </span>
+                                                                <Badge className={clsx(
+                                                                    "text-[10px] font-black px-2.5 py-1 rounded-lg border-none",
+                                                                    offer.status === 'accepted' ? "bg-emerald-500 text-white" :
+                                                                        offer.status === 'rejected' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-700"
+                                                                )}>
+                                                                    {offer.status === 'accepted' ? 'ĐƯỢC CHỌN' :
+                                                                        offer.status === 'rejected' ? 'KHÔNG PHÙ HỢP' : 'ĐANG CHỜ DUYỆT'}
+                                                                </Badge>
+                                                                <span className="text-[11px] font-bold text-gray-400">
+                                                                    • {formatDistanceToNow(new Date(offer.offered_at), { addSuffix: true, locale: vi })}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed bg-gray-50/50 p-3 rounded-xl border border-gray-100/50 group-hover/offer:bg-white transition-colors italic">
+                                                                "{offer.message}"
+                                                            </p>
                                                         </div>
-                                                        <p className="text-sm text-gray-600 line-clamp-1 max-w-md">{offer.message}</p>
                                                     </div>
-                                                </div>
-                                                <div className="text-xs text-gray-400 font-medium pl-5 sm:pl-0">
-                                                    Đã gửi {formatDistanceToNow(new Date(offer.offered_at), { addSuffix: true, locale: vi })}
+
+                                                    {/* In-row action if needed, or just status indicator */}
+                                                    <div className="flex flex-row md:flex-col items-center md:items-end gap-2 md:gap-0 pl-5 md:pl-0">
+                                                        {offer.status === 'accepted' && (
+                                                            <div className="flex items-center gap-2 text-emerald-600 text-xs font-black">
+                                                                <PlusCircle className="w-4 h-4" />
+                                                                KẾT NỐI NGAY
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
@@ -321,6 +370,7 @@ export default function MyOffersPage() {
                     })}
                 </div>
             )}
+
         </div>
     )
 }

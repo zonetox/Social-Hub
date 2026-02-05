@@ -91,7 +91,7 @@ export default function CreateRequestPage() {
                 body: JSON.stringify({ action: 'create_request' })
             }).catch(console.error)
 
-            router.push('/dashboard/requests')
+            router.push('/dashboard')
 
         } catch (error) {
             console.error('Error creating request:', error)
