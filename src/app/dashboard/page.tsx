@@ -7,7 +7,7 @@ import { useProfile } from '@/lib/hooks/useProfile'
 import { useSubscription } from '@/lib/hooks/useSubscription'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
-import { DashboardLoadingSkeleton, DashboardErrorState } from '@/components/dashboard/DashboardStates'
+import { DashboardLoadingSkeleton, DashboardErrorState, DashboardEmptyState } from '@/components/dashboard/DashboardStates'
 import {
     TrendingUp,
     Send,
@@ -86,6 +86,9 @@ export default function DashboardOverviewPage() {
         return <DashboardErrorState message={profileError || subError || 'Lỗi tải dữ liệu Dashboard'} onRetry={() => window.location.reload()} />
     }
 
+    // Check for empty state
+    const isEmpty = metrics.opportunities === 0 && metrics.offersSent === 0 && metrics.requestsClosed === 0
+
     const stats = [
         {
             label: 'Cơ hội trong ngành',
@@ -160,32 +163,43 @@ export default function DashboardOverviewPage() {
                 </div>
             )}
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {stats.map((stat, index) => (
-                    <Card key={index} className="group p-6 border border-gray-100 hover:shadow-xl hover:shadow-primary-500/5 transition-all duration-300">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className={clsx("p-3 rounded-2xl transition-transform group-hover:scale-110 duration-500", stat.bg)}>
-                                <stat.icon className={clsx("w-6 h-6", stat.color)} />
-                            </div>
-                            <span className={clsx("text-4xl font-black tracking-tighter", stat.color)}>
-                                {stat.value}
-                            </span>
-                        </div>
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">{stat.label}</h3>
-                        <p className="text-xs text-gray-500 font-medium mb-6">Dữ liệu được cập nhật theo thời gian thực</p>
-
-                        <Link href={stat.href}>
-                            <Button variant="ghost" className="w-full text-primary-600 font-black flex items-center justify-between group/btn px-0 hover:bg-transparent">
-                                {stat.cta}
-                                <div className="p-1.5 bg-primary-50 rounded-lg group-hover/btn:bg-primary-600 group-hover/btn:text-white transition-colors">
-                                    <ChevronRight className="w-4 h-4" />
+            {/* Stats Grid or Empty State */}
+            {isEmpty ? (
+                <DashboardEmptyState
+                    title="Chưa có dữ liệu hoạt động"
+                    description="Bạn chưa có hoạt động nào trong tháng này. Hãy bắt đầu tìm kiếm cơ hội ngay!"
+                    action={{
+                        label: "Tìm kiếm cơ hội",
+                        onClick: () => window.location.href = '/dashboard/requests'
+                    }}
+                />
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {stats.map((stat, index) => (
+                        <Card key={index} className="group p-6 border border-gray-100 hover:shadow-xl hover:shadow-primary-500/5 transition-all duration-300">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className={clsx("p-3 rounded-2xl transition-transform group-hover:scale-110 duration-500", stat.bg)}>
+                                    <stat.icon className={clsx("w-6 h-6", stat.color)} />
                                 </div>
-                            </Button>
-                        </Link>
-                    </Card>
-                ))}
-            </div>
+                                <span className={clsx("text-4xl font-black tracking-tighter", stat.color)}>
+                                    {stat.value}
+                                </span>
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-1">{stat.label}</h3>
+                            <p className="text-xs text-gray-500 font-medium mb-6">Dữ liệu được cập nhật theo thời gian thực</p>
+
+                            <Link href={stat.href}>
+                                <Button variant="ghost" className="w-full text-primary-600 font-black flex items-center justify-between group/btn px-0 hover:bg-transparent">
+                                    {stat.cta}
+                                    <div className="p-1.5 bg-primary-50 rounded-lg group-hover/btn:bg-primary-600 group-hover/btn:text-white transition-colors">
+                                        <ChevronRight className="w-4 h-4" />
+                                    </div>
+                                </Button>
+                            </Link>
+                        </Card>
+                    ))}
+                </div>
+            )}
 
             {/* Quota & Upsell Banner */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
