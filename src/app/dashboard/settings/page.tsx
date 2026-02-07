@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { DashboardLoadingSkeleton, DashboardErrorState } from '@/components/dashboard/DashboardStates'
+import { User, Globe, Shield, Lock, CheckCircle, AlertCircle, Upload, Trash2 } from 'lucide-react'
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth()

@@ -370,7 +370,7 @@ export default function MyOffersPage() {
                                                                 </span>
                                                             </div>
                                                             <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed bg-gray-50/50 p-3 rounded-xl border border-gray-100/50 group-hover/offer:bg-white transition-colors italic">
-                                                                "{offer.message}"
+                                                                &quot;{offer.message}&quot;
                                                             </p>
                                                         </div>
                                                     </div>
