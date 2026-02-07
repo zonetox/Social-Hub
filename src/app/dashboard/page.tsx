@@ -41,11 +41,20 @@ export default function DashboardOverviewPage() {
                     body: JSON.stringify({ timeRange: 'month' })
                 })
 
-                // FIX-04: Handle Auth Errors
+                // FIX-04: Handle Auth Errors (Safe Reload)
                 if (response.status === 401) {
-                    console.warn('[Dashboard] Unauthorized - reloading session')
-                    window.location.reload() // Force reload to refresh session/redirect
-                    return
+                    console.warn('[Dashboard] Unauthorized - attempting safe refresh')
+                    const hasReloaded = localStorage.getItem('dashboard_reload_401')
+
+                    if (!hasReloaded) {
+                        localStorage.setItem('dashboard_reload_401', '1')
+                        window.location.reload()
+                        return
+                    } else {
+                        localStorage.removeItem('dashboard_reload_401')
+                        window.location.href = '/login' // Direct navigation to login
+                        return
+                    }
                 }
 
                 // FIX-05: Safe JSON Parsing
@@ -53,6 +62,9 @@ export default function DashboardOverviewPage() {
                     const text = await response.text()
                     throw new Error(`API Error ${response.status}: ${text.slice(0, 100)}`)
                 }
+
+                // Success - clear any previous reload flag
+                localStorage.removeItem('dashboard_reload_401')
 
                 const data = await response.json()
                 setMetrics(data)
