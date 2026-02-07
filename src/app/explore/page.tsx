@@ -9,11 +9,15 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { DashboardErrorState } from '@/components/dashboard/DashboardStates'
 import { Input } from '@/components/ui/Input'
 import { Search, Users, Sparkles } from 'lucide-react'
-// ... imports
-
-// ... dynamic imports
-
+import type { Profile } from '@/types/user.types'
+import dynamicImport from 'next/dynamic'
+import { SiteHeader } from '@/components/shared/SiteHeader'
 import { useSearchParams } from 'next/navigation'
+
+const RankingBoard = dynamicImport(() => import('@/components/dashboard/RankingBoard').then(mod => mod.RankingBoard), {
+    loading: () => <div className="h-40 bg-gray-50 animate-pulse rounded-2xl mb-8" />,
+    ssr: false
+})
 
 export default function ExplorePage() {
     const searchParams = useSearchParams()
