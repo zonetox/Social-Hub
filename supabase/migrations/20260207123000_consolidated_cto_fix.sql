@@ -1,15 +1,21 @@
--- THE STANDARD AUTH SYNC - CTO GRADE (RELIABILITY V3)
--- This script ensures users, profiles, subscriptions, and initial credits are created atomically.
--- 1. CLEANUP
+-- =========================================================
+-- CTO PRODUCTION MASTER FIX - TRIGGERS CONSOLIDATION
+-- =========================================================
+-- 1. CLEANUP ALL CONFLICTING TRIGGERS
+-- Remove legacy trigger on public.users (it conflicts with our main trigger)
+DROP TRIGGER IF EXISTS create_profile_on_user_creation ON public.users;
+DROP FUNCTION IF EXISTS public.create_profile_for_new_user();
+-- Reset main auth trigger
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user();
--- 2. ENHANCED SYNC FUNCTION
+-- 2. THE UNIFIED ATOMIC SYNC FUNCTION
+-- This single function handles EVERYTHING: User, Profile, Subscription, Credits.
 CREATE OR REPLACE FUNCTION public.handle_new_user() RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public,
     auth AS $$
 DECLARE final_username TEXT;
 default_plan_id UUID;
-BEGIN -- 2.1 Calculate Username
+BEGIN -- 2.1 Sanitize & Generate Unique Username
 final_username := LOWER(
     REGEXP_REPLACE(
         SPLIT_PART(NEW.email, '@', 1),
@@ -18,26 +24,23 @@ final_username := LOWER(
         'g'
     )
 ) || '-' || SUBSTRING(NEW.id::text, 1, 4);
--- 2.2 Atomic User Sync
+-- 2.2 Sync public.users (Atomic)
 INSERT INTO public.users (id, email, username, full_name, role, is_active)
 VALUES (
         NEW.id,
         NEW.email,
-        COALESCE(
-            NEW.raw_user_meta_data->>'username',
-            final_username
-        ),
+        final_username,
         COALESCE(
             NEW.raw_user_meta_data->>'full_name',
             SPLIT_PART(NEW.email, '@', 1)
         ),
-        COALESCE(NEW.raw_user_meta_data->>'role', 'user'),
+        'user',
         TRUE
     ) ON CONFLICT (id) DO
 UPDATE
 SET email = EXCLUDED.email,
     full_name = EXCLUDED.full_name;
--- 2.3 Atomic Profile Sync
+-- 2.3 Sync public.profiles (Atomic)
 INSERT INTO public.profiles (user_id, display_name, slug, is_public)
 VALUES (
         NEW.id,
@@ -48,7 +51,7 @@ VALUES (
         final_username,
         TRUE
     ) ON CONFLICT (user_id) DO NOTHING;
--- 2.4 Initialize Default Subscription (STANDARD)
+-- 2.4 Sync Subscription (STANDARD - 0 USD)
 SELECT id INTO default_plan_id
 FROM public.subscription_plans
 WHERE name = 'STANDARD'
@@ -63,25 +66,24 @@ VALUES (
         NOW() + INTERVAL '365 days'
     ) ON CONFLICT (user_id) DO NOTHING;
 END IF;
--- 2.5 Initialize Trial Credits (5 Credits)
-INSERT INTO public.card_credits (user_id, amount, purchased_at)
-VALUES (NEW.id, 5, NOW()) ON CONFLICT (user_id) DO NOTHING;
+-- 2.5 Initialize Credits (5 Trial Credits)
+INSERT INTO public.card_credits (user_id, amount)
+VALUES (NEW.id, 5) ON CONFLICT (user_id) DO NOTHING;
 RETURN NEW;
 EXCEPTION
-WHEN OTHERS THEN -- Log error in postgres logs if any
-RAISE WARNING 'Error in handle_new_user for %: %',
+WHEN OTHERS THEN -- Safety fallback to ensure Auth user is still created even if sync hits a snag
+RAISE WARNING 'Sync Error for %: %',
 NEW.id,
 SQLERRM;
 RETURN NEW;
 END;
 $$;
--- 3. RE-INSTALL TRIGGER
+-- 3. APPLY TO AUTH.USERS
 CREATE TRIGGER on_auth_user_created
 AFTER
 INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
--- 4. BACKFILL MISSING RECORDS (SAFETY)
--- Ensure Existing users have full record set
-INSERT INTO public.users (id, email, username, full_name, role)
+-- 4. BACKFILL DATA FOR EXISTING USERS (Safety Net)
+INSERT INTO public.users (id, email, username, full_name)
 SELECT id,
     email,
     LOWER(
@@ -92,8 +94,7 @@ SELECT id,
             'g'
         )
     ) || '-' || SUBSTRING(id::text, 1, 4),
-    COALESCE(raw_user_meta_data->>'full_name', email),
-    'user'
+    COALESCE(raw_user_meta_data->>'full_name', email)
 FROM auth.users ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.profiles (user_id, display_name, slug)
 SELECT id,
@@ -113,9 +114,3 @@ INSERT INTO public.card_credits (user_id, amount)
 SELECT id,
     5
 FROM public.users ON CONFLICT (user_id) DO NOTHING;
--- 5. RE-VALIDATE RLS
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.card_credits ENABLE ROW LEVEL SECURITY;
--- Note: Policies assumed already existing from master_reset or payment_system migrations.
