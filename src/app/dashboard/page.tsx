@@ -40,12 +40,25 @@ export default function DashboardOverviewPage() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ timeRange: 'month' })
                 })
-                if (response.ok) {
-                    const data = await response.json()
-                    setMetrics(data)
+
+                // FIX-04: Handle Auth Errors
+                if (response.status === 401) {
+                    console.warn('[Dashboard] Unauthorized - reloading session')
+                    window.location.reload() // Force reload to refresh session/redirect
+                    return
                 }
+
+                // FIX-05: Safe JSON Parsing
+                if (!response.ok) {
+                    const text = await response.text()
+                    throw new Error(`API Error ${response.status}: ${text.slice(0, 100)}`)
+                }
+
+                const data = await response.json()
+                setMetrics(data)
             } catch (error) {
                 console.error('Failed to fetch metrics:', error)
+                // Optional: set safe defaults or show error toast
             } finally {
                 setMetricsLoading(false)
             }

@@ -18,28 +18,32 @@ export async function middleware(req: NextRequest) {
     const protectedRoutes = ['/dashboard']
     const adminRoutes = ['/dashboard/admin']
     const authRoutes = ['/login', '/register']
+    const isApiRoute = path.startsWith('/api/')
 
-    // Redirect authenticated users away from auth pages
+    // 1. Redirect authenticated users away from auth pages
     if (session && authRoutes.some(route => path.startsWith(route))) {
         const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url))
-        // Copy cookies from original res to redirectRes
-        res.cookies.getAll().forEach(cookie => {
-            redirectRes.cookies.set(cookie.name, cookie.value)
-        })
         return redirectRes
     }
 
-    // Redirect unauthenticated users to login
-    if (!session && protectedRoutes.some(route => path.startsWith(route))) {
+    // 2. Protect Routes (Dashboard & Admin)
+    const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route))
+
+    if (!session && isProtectedRoute) {
+        // FIX-03: API routes should return 401 JSON, not redirect
+        if (isApiRoute) {
+            return NextResponse.json(
+                { error: 'Unauthorized', message: 'Authentication required' },
+                { status: 401 }
+            )
+        }
+
+        // Page routes redirect to login
         const redirectRes = NextResponse.redirect(new URL('/login', req.url))
-        // Ensure cookies are cleared/reset correctly on redirect
-        res.cookies.getAll().forEach(cookie => {
-            redirectRes.cookies.set(cookie.name, cookie.value)
-        })
         return redirectRes
     }
 
-    // Check admin access (only if on an admin route)
+    // 3. Admin Access Control
     if (session && adminRoutes.some(route => path.startsWith(route))) {
         try {
             const { data: user } = await supabase
@@ -49,18 +53,17 @@ export async function middleware(req: NextRequest) {
                 .maybeSingle() as any
 
             if (user?.role !== 'admin') {
-                const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url))
-                res.cookies.getAll().forEach(cookie => {
-                    redirectRes.cookies.set(cookie.name, cookie.value)
-                })
-                return redirectRes
+                if (isApiRoute) {
+                    return NextResponse.json(
+                        { error: 'Forbidden', message: 'Admin access required' },
+                        { status: 403 }
+                    )
+                }
+                return NextResponse.redirect(new URL('/dashboard', req.url))
             }
         } catch (error) {
-            const redirectRes = NextResponse.redirect(new URL('/dashboard', req.url))
-            res.cookies.getAll().forEach(cookie => {
-                redirectRes.cookies.set(cookie.name, cookie.value)
-            })
-            return redirectRes
+            console.error('Middleware admin check error:', error)
+            return NextResponse.redirect(new URL('/dashboard', req.url))
         }
     }
 
