@@ -4,12 +4,16 @@ import { createContext, useContext, useEffect, useState, ReactNode, useRef } fro
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@/types/user.types'
 
+type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
+
 interface AuthContextType {
     user: User | null
     loading: boolean
+    status: AuthStatus
     hasSession: boolean
     signOut: () => Promise<void>
     isAdmin: boolean
+    error: string | null
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -17,16 +21,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null)
     const [hasSession, setHasSession] = useState(false)
-    const [loading, setLoading] = useState(true)
-    const loadingRef = useRef(true)
+    const [status, setStatus] = useState<AuthStatus>('loading')
+    const [error, setError] = useState<string | null>(null)
     const supabase = createClient()
+    const mountedRef = useRef(true)
 
-    // Sync ref with state
-    useEffect(() => {
-        loadingRef.current = loading
-    }, [loading])
-
-    const fetchUser = async (userId: string, authUserEmail?: string, retries = 1): Promise<User | null> => {
+    const fetchProfile = async (userId: string, authUserEmail?: string): Promise<User | null> => {
+        console.log('[Auth] profile fetch start for:', userId)
         try {
             const { data, error } = await supabase
                 .from('users')
@@ -35,19 +36,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 .maybeSingle()
 
             if (error) {
-                console.warn(`[Auth] Error fetching user record:`, error.message)
-                if (retries > 0) {
-                    await new Promise(resolve => setTimeout(resolve, 1000))
-                    return fetchUser(userId, authUserEmail, retries - 1)
-                }
+                console.error('[Auth] profile fetch failed:', error.message)
+                // Even if profile fails, we don't throw everything away if we have a session.
+                // But we log it clearly.
+            } else {
+                console.log('[Auth] profile fetch success:', data ? 'Found' : 'Not Found')
             }
 
             if (data) return data as unknown as User
 
-            // STANDARD FALLBACK: If public record is missing, return a virtual user
-            // This prevents the UI from blocking or crashing.
+            // STANDARD FALLBACK: Virtual User
             if (authUserEmail) {
-                console.log('[Auth] Creating virtual user for:', authUserEmail)
+                console.warn('[Auth] Profile missing, creating virtual user for UI')
                 return {
                     id: userId,
                     email: authUserEmail,
@@ -59,40 +59,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             return null
-        } catch (error) {
-            console.error('[Auth] Unexpected error during fetchUser:', error)
+        } catch (err) {
+            console.error('[Auth] profile fetch exception:', err)
             return null
         }
     }
 
     useEffect(() => {
-        let mounted = true
+        mountedRef.current = true
 
         const initAuth = async () => {
+            console.log('[Auth] Initializing authentication...')
+            // Timeout Check
+            const timeoutId = setTimeout(() => {
+                if (mountedRef.current && status === 'loading') {
+                    console.error('[Auth] Initialization timeout (3s)')
+                    setStatus('unauthenticated')
+                    setHasSession(false)
+                    setError('Auth initialization timeout')
+                }
+            }, 3000)
+
             try {
-                console.log('[Auth] Initializing authentication...')
+                // 1. Get Session
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
                 if (sessionError) {
-                    console.error('[Auth] Session error:', sessionError.message)
+                    console.error('[Auth] session error:', sessionError.message)
                     throw sessionError
                 }
 
+                console.log('[Auth] session:', session ? 'Active' : 'None')
+
                 if (session?.user) {
-                    setHasSession(true)
-                    console.log('[Auth] Session found, fetching public user data...')
-                    const userData = await fetchUser(session.user.id, session.user.email)
-                    if (mounted) setUser(userData)
+                    if (mountedRef.current) setHasSession(true)
+
+                    // 2. Fetch Profile (Decoupled)
+                    const profileData = await fetchProfile(session.user.id, session.user.email)
+
+                    if (mountedRef.current) {
+                        setUser(profileData)
+                        setStatus('authenticated')
+                        setError(null)
+                    }
                 } else {
-                    console.log('[Auth] No active session found.')
+                    if (mountedRef.current) {
+                        setStatus('unauthenticated')
+                        setHasSession(false)
+                        setUser(null)
+                    }
                 }
-            } catch (error) {
-                console.error('[Auth] Initialization failed:', error)
+            } catch (err: any) {
+                console.error('[Auth] init failed:', err)
+                if (mountedRef.current) {
+                    setStatus('unauthenticated')
+                    setError(err.message)
+                }
             } finally {
-                if (mounted) {
-                    console.log('[Auth] Initialization complete.')
-                    setLoading(false)
-                }
+                clearTimeout(timeoutId)
             }
         }
 
@@ -100,55 +124,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                if (!mounted) return
+                if (!mountedRef.current) return
                 console.log(`[Auth] Auth state changed: ${event}`)
 
                 if (session?.user) {
                     setHasSession(true)
-                    const userData = await fetchUser(session.user.id, session.user.email)
-                    if (mounted) setUser(userData)
+                    // Optimistic update to avoid flickering while fetching profile
+                    setStatus('loading')
+                    const profileData = await fetchProfile(session.user.id, session.user.email)
+                    if (mountedRef.current) {
+                        setUser(profileData)
+                        setStatus('authenticated')
+                    }
                 } else {
                     setHasSession(false)
                     setUser(null)
+                    setStatus('unauthenticated')
                 }
-
-                setLoading(false)
             }
         )
 
-        // As a fallback, ensure loading is set to false after a timeout 
-        // Reduced to 3s to prevent infinite loading perception (Fail-fast)
-        const timeout = setTimeout(() => {
-            if (mounted && loadingRef.current) {
-                console.warn('[Auth] Initialization timed out after 3s, forcing loading to false')
-                setLoading(false)
-            }
-        }, 3000)
-
         return () => {
-            mounted = false
+            mountedRef.current = false
             subscription.unsubscribe()
-            clearTimeout(timeout)
         }
     }, [])
 
     const signOut = async () => {
         try {
-            setLoading(true)
+            setStatus('loading')
             await supabase.auth.signOut()
-            setUser(null)
-            setHasSession(false)
-        } finally {
-            setLoading(false)
+            if (mountedRef.current) {
+                setUser(null)
+                setHasSession(false)
+                setStatus('unauthenticated')
+            }
+        } catch (err) {
+            console.error('[Auth] Sign out error', err)
+            setStatus('unauthenticated') // Force logout state even on error
         }
     }
 
     const value = {
         user,
-        loading,
+        loading: status === 'loading',
+        status,
         hasSession,
         signOut,
-        isAdmin: user?.role === 'admin'
+        isAdmin: user?.role === 'admin',
+        error
     }
 
     return (

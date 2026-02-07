@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/lib/contexts/AuthContext'
 import { RequestCard } from '@/components/marketplace/RequestCard'
 import { Button } from '@/components/ui/Button'
-import { Plus, Search, Filter, ArrowUpDown } from 'lucide-react'
+import { Plus, Search, Filter, ArrowUpDown, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
+import { DashboardErrorState } from '@/components/dashboard/DashboardStates'
 
 export default function RequestsPage() {
     const { user } = useAuth()
@@ -16,6 +17,7 @@ export default function RequestsPage() {
     const [requests, setRequests] = useState<any[]>([])
     const [categories, setCategories] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [loadingMore, setLoadingMore] = useState(false)
     const [hasMore, setHasMore] = useState(true)
     const [page, setPage] = useState(0)
@@ -41,6 +43,7 @@ export default function RequestsPage() {
     const fetchRequests = async (currentPage: number, isNewSearch: boolean = false) => {
         if (isNewSearch) {
             setLoading(true)
+            setError(null)
             setPage(0)
         } else {
             setLoadingMore(true)
@@ -75,7 +78,9 @@ export default function RequestsPage() {
             const to = from + PAGE_SIZE - 1
             query = query.range(from, to)
 
-            const { data, count, error } = await query
+            const { data, count, error: fetchError } = await query
+
+            if (fetchError) throw fetchError
 
             if (data) {
                 if (isNewSearch) {
@@ -85,8 +90,9 @@ export default function RequestsPage() {
                 }
                 setHasMore(count ? (currentPage + 1) * PAGE_SIZE < count : false)
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error fetching requests:', err)
+            setError(err.message || 'Không thể tải danh sách yêu cầu.')
         } finally {
             setLoading(false)
             setLoadingMore(false)
@@ -102,6 +108,17 @@ export default function RequestsPage() {
         const nextPage = page + 1
         setPage(nextPage)
         fetchRequests(nextPage, false)
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-gray-50/50 pt-12">
+                <DashboardErrorState
+                    message={error}
+                    onRetry={() => fetchRequests(0, true)}
+                />
+            </div>
+        )
     }
 
     return (
