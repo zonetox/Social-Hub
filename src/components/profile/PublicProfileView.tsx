@@ -385,7 +385,7 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
 
                             {profile.user?.bio && (
                                 <p className="text-xl text-gray-600 max-w-2xl font-medium leading-relaxed italic">
-                                    "{profile.user.bio}"
+                                    &quot;{profile.user.bio}&quot;
                                 </p>
                             )}
                         </div>
@@ -462,7 +462,7 @@ export function PublicProfileView({ profile }: PublicProfileViewProps) {
                             {visibleAccounts.length === 0 && (
                                 <div className="py-20 text-center text-gray-400">
                                     <Globe className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                                    <p className="font-bold">This creator hasn't linked any socials yet.</p>
+                                    <p className="font-bold">This creator hasn&apos;t linked any socials yet.</p>
                                 </div>
                             )}
                         </div>

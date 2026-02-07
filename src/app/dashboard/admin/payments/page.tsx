@@ -568,7 +568,7 @@ export default function AdminPaymentsPage() {
                         </div>
                         <h2 className="text-2xl font-black text-gray-900 mb-2">Confirm Approval</h2>
                         <p className="text-gray-600 mb-8">
-                            Are you sure you want to approve this payment? This will activate the user's subscription or add credits immediately.
+                            Are you sure you want to approve this payment? This will activate the user&apos;s subscription or add credits immediately.
                         </p>
                         <div className="flex gap-4">
                             <Button
@@ -589,7 +589,8 @@ export default function AdminPaymentsPage() {
                         </div>
                     </Card>
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     )
 }

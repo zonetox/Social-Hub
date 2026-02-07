@@ -49,7 +49,7 @@ export function ForgotPasswordForm() {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
                 <p className="text-gray-600 mb-6">
-                    We've sent a password reset link to <span className="font-medium text-gray-900">{email}</span>.
+                    We&apos;ve sent a password reset link to <span className="font-medium text-gray-900">{email}</span>.
                 </p>
                 <Link href="/login">
                     <Button variant="outline" className="w-full">
@@ -69,7 +69,7 @@ export function ForgotPasswordForm() {
 
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Forgot password?</h2>
             <p className="text-gray-600 mb-6 font-Inter">
-                No worries! Just enter your email and we'll send you a link to reset your password.
+                No worries! Just enter your email and we&apos;ll send you a link to reset your password.
             </p>
 
             {serverError && (

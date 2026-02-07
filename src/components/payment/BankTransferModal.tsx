@@ -266,7 +266,7 @@ export function BankTransferModal({
                         <li>Include the transfer content exactly as shown</li>
                         <li>Take a screenshot of successful transfer</li>
                         <li>Upload screenshot and submit</li>
-                        <li>We'll verify and activate within 24 hours</li>
+                        <li>We&apos;ll verify and activate within 24 hours</li>
                     </ol>
                 </div>
 
